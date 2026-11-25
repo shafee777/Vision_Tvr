@@ -1,19 +1,24 @@
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 const db = require('../database');
 
 async function seedOptii() {
   console.log('[Optii Seeder] Starting fresh seed process for Optii...');
   await db.run('PRAGMA foreign_keys = OFF;');
 
-  // 1. Seed Admin User
+  // 1. Seed Admin User (password sourced from ADMIN_SEED_PASSWORD env var)
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+  if (!adminPassword) {
+    throw new Error('ADMIN_SEED_PASSWORD environment variable must be set before seeding.');
+  }
   const salt = bcrypt.genSaltSync(10);
-  const passwordHash = bcrypt.hashSync('optii123', salt);
+  const passwordHash = bcrypt.hashSync(adminPassword, salt);
   await db.run(
     `INSERT OR REPLACE INTO users (id, username, password_hash, full_name, role) 
      VALUES (1, 'admin', ?, 'Optii Head Optometrist', 'admin')`,
     [passwordHash]
   );
-  console.log('  ✓ Seeded admin user: admin / optii123');
+  console.log('  ✓ Seeded admin user: admin (password from ADMIN_SEED_PASSWORD)');
 
   // 2. Seed Brands
   const brands = [

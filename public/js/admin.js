@@ -161,7 +161,7 @@ const OptiiAdmin = {
     this.toast('Signed out successfully.', 'info');
   },
 
-  // Quick Role Credential Switcher (for testing convenience)
+  // Quick Role Selector (sets username only; never stores or fills passwords)
   fillRoleCreds(role) {
     const userInp = document.getElementById('login-username');
     const passInp = document.getElementById('login-password');
@@ -170,9 +170,12 @@ const OptiiAdmin = {
     const activeBtn = document.getElementById(`role-tab-${role}`);
     if (activeBtn) activeBtn.classList.add('active');
 
-    if (userInp && passInp) {
+    if (userInp) {
       userInp.value = role;
-      passInp.value = 'optii123';
+    }
+    if (passInp) {
+      passInp.value = '';
+      passInp.focus();
     }
   },
 
