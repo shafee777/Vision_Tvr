@@ -9,7 +9,7 @@ const { authenticateToken, requireRole } = require('../middleware/auth');
 const { passwordLimiter } = require('../middleware/rateLimiter');
 const { verifyFileSignature } = require('../utils/fileSignature');
 const { validateBody } = require('../middleware/validate');
-const { productCreateSchema, stockAdjustSchema, passwordChangeSchema } = require('../validators/schemas');
+const { productCreateSchema, stockAdjustSchema, passwordChangeSchema, clinicSettingsSchema } = require('../validators/schemas');
 
 // Multer Storage Configuration for Product Images
 const uploadDir = path.join(__dirname, '../../public/images/products');
@@ -1462,6 +1462,24 @@ router.get('/settings', async (req, res) => {
     const hours = await db.all('SELECT * FROM store_hours WHERE store_id = 1 ORDER BY day_of_week ASC');
     res.json({ success: true, settings, store, hours });
   } catch (err) {
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// PUT /api/admin/settings - Update Clinic & Store Settings (Admin Only)
+router.put('/settings', requireRole('admin'), validateBody(clinicSettingsSchema), async (req, res) => {
+  try {
+    const { name, address, phone } = req.body;
+    await db.run(
+      'UPDATE stores SET name = ?, address = ?, phone = ? WHERE id = 1',
+      [name, address, phone]
+    );
+
+    const store = await db.get('SELECT * FROM stores WHERE id = 1');
+    await logAudit(req, 'UPDATE_CLINIC_SETTINGS', 'stores', 1, { name, address, phone });
+    res.json({ success: true, message: 'Clinic settings saved successfully.', store });
+  } catch (err) {
+    console.error('Update Clinic Settings Error:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });

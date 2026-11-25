@@ -1237,7 +1237,41 @@ const OptiiAdmin = {
 
   async handleSaveSettings(e) {
     e.preventDefault();
-    this.toast('Clinic settings updated.', 'success');
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const name = (document.getElementById('set-store-name')?.value || '').trim();
+    const address = (document.getElementById('set-store-address')?.value || '').trim();
+    const phone = (document.getElementById('set-store-phone')?.value || '').trim();
+
+    if (!name || !address || !phone) {
+      this.toast('Atelier name, address, and WhatsApp number are required.', 'error');
+      return;
+    }
+
+    try {
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving…';
+      }
+
+      const res = await this.request('/settings', {
+        method: 'PUT',
+        body: { name, address, phone }
+      });
+
+      if (res && res.success) {
+        this.toast(res.message || 'Clinic settings saved successfully.', 'success');
+      } else {
+        throw new Error(res?.message || 'Unable to save clinic settings.');
+      }
+    } catch (err) {
+      this.toast(err.message || 'Failed to save clinic settings.', 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Atelier Settings';
+      }
+    }
   },
 
   // ═════════════════════════════════════════════════════════════════════

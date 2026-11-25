@@ -356,6 +356,28 @@ async function runTestSuite() {
       inventory.data, inventory.status
     );
 
+    // 21. Admin Clinic Settings Update (Authenticated + Zod Validation)
+    const badSettings = await request('/api/admin/settings', {
+      method: 'PUT',
+      headers: authHeader,
+      body: { name: 'A', address: '123', phone: 'bad' }
+    });
+    const origSettings = await request('/api/admin/settings', { headers: authHeader });
+    const origStore = origSettings.data && origSettings.data.store;
+    const goodSettings = await request('/api/admin/settings', {
+      method: 'PUT',
+      headers: authHeader,
+      body: {
+        name: origStore ? origStore.name : 'Optii Flagship Clinic',
+        address: origStore ? origStore.address : '12 Kamalalayam West Bank, Thiruvarur',
+        phone: origStore ? origStore.phone : '+919486552324'
+      }
+    });
+    record('Admin Clinic Settings (Zod + Persist)', '/api/admin/settings',
+      badSettings.status === 400 && goodSettings.status === 200 && goodSettings.data.success === true,
+      { bad: badSettings.status, good: goodSettings.status }, goodSettings.status
+    );
+
   } catch (err) {
     console.error('Fatal Test Exception:', err);
   } finally {
