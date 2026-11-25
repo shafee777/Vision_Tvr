@@ -961,7 +961,6 @@ const OptiiAdmin = {
       this.toast(err.message || 'Error processing refund.', 'error');
     }
   },
-  },
 
   async handleOrderTransition() {
     const orderNumber = document.getElementById('order-detail-target-num').value;
