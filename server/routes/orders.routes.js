@@ -154,21 +154,116 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
       });
     }
 
-    // Recalculate subtotal server-side to prevent client tampering
+    // Recalculate subtotal strictly server-side from DB records (ignore all client-sent prices)
     let calculatedSubtotal = 0;
+    const pricedItems = [];
     for (const it of items) {
-      let price = Number(it.total_price_inr || it.price_inr || it.item_price_inr || 0);
-      if (price <= 0 && it.variant_id) {
-        const vRow = await db.get(
-          'SELECT p.base_price_inr FROM product_variants v JOIN products p ON p.id = v.product_id WHERE v.id = ?',
+      let frameRow = null;
+      if (it.variant_id) {
+        frameRow = await db.get(
+          `SELECT p.id AS product_id, p.name AS product_name, v.id AS variant_id,
+                  COALESCE(v.price_override_inr, p.base_price_inr) AS frame_price_inr
+           FROM product_variants v
+           JOIN products p ON p.id = v.product_id
+           WHERE v.id = ? AND v.is_active = 1 AND p.is_active = 1`,
           [it.variant_id]
         );
-        if (vRow && vRow.base_price_inr) {
-          price = Number(vRow.base_price_inr);
+      } else if (it.sku) {
+        frameRow = await db.get(
+          `SELECT p.id AS product_id, p.name AS product_name, v.id AS variant_id,
+                  COALESCE(v.price_override_inr, p.base_price_inr) AS frame_price_inr
+           FROM product_variants v
+           JOIN products p ON p.id = v.product_id
+           WHERE v.sku = ? AND v.is_active = 1 AND p.is_active = 1`,
+          [it.sku]
+        );
+      }
+      if (!frameRow && it.product_id) {
+        frameRow = await db.get(
+          `SELECT id AS product_id, name AS product_name, NULL AS variant_id,
+                  base_price_inr AS frame_price_inr
+           FROM products
+           WHERE id = ? AND is_active = 1`,
+          [it.product_id]
+        );
+      }
+
+      if (!frameRow || frameRow.frame_price_inr == null) {
+        return res.status(400).json({
+          success: false,
+          error_code: 'INVALID_ORDER_ITEM',
+          message: `Unable to verify product pricing for ${it.product_name || it.name || 'order item'}.`
+        });
+      }
+
+      const framePrice = Number(frameRow.frame_price_inr);
+      let lensPrice = 0;
+      const lenses = it.configured_lenses;
+      if (lenses && typeof lenses === 'object') {
+        const usageLabel = String(lenses.usage_name || lenses.usage || '').trim();
+        const isFrameOnly = !usageLabel || usageLabel.toLowerCase().includes('frame only');
+        if (!isFrameOnly) {
+          let usageRow = null;
+          if (lenses.usage_id) {
+            usageRow = await db.get('SELECT id, base_price_inr FROM lens_usages WHERE id = ? AND is_active = 1', [Number(lenses.usage_id)]);
+          } else if (usageLabel) {
+            usageRow = await db.get('SELECT id, base_price_inr FROM lens_usages WHERE LOWER(name) = LOWER(?) AND is_active = 1', [usageLabel]);
+          }
+          if (usageRow) lensPrice += Number(usageRow.base_price_inr || 0);
+
+          const thickLabel = String(lenses.thickness_name || lenses.index || '').trim();
+          const indexMatch = thickLabel.match(/\b(1\.\d{2})\b/);
+          let thickRow = null;
+          if (lenses.thickness_id) {
+            thickRow = await db.get('SELECT price_inr FROM lens_thicknesses WHERE id = ? AND is_active = 1', [Number(lenses.thickness_id)]);
+          } else if (thickLabel) {
+            if (usageRow) {
+              thickRow = await db.get(
+                'SELECT price_inr FROM lens_thicknesses WHERE usage_id = ? AND (LOWER(name) = LOWER(?) OR LOWER(name) LIKE LOWER(?)) AND is_active = 1 LIMIT 1',
+                [usageRow.id, thickLabel, `%${thickLabel}%`]
+              );
+            }
+            if (!thickRow) {
+              thickRow = await db.get(
+                'SELECT price_inr FROM lens_thicknesses WHERE (LOWER(name) = LOWER(?) OR LOWER(name) LIKE LOWER(?)) AND is_active = 1 LIMIT 1',
+                [thickLabel, `%${thickLabel}%`]
+              );
+            }
+            if (!thickRow && indexMatch) {
+              thickRow = await db.get(
+                'SELECT price_inr FROM lens_thicknesses WHERE index_rating = ? AND is_active = 1 LIMIT 1',
+                [Number(indexMatch[1])]
+              );
+            }
+          }
+          if (thickRow) lensPrice += Number(thickRow.price_inr || 0);
+
+          const coatLabel = String(lenses.coating_name || lenses.coating || '').trim();
+          let coatRow = null;
+          if (lenses.coating_id) {
+            coatRow = await db.get('SELECT price_inr FROM lens_coatings WHERE id = ? AND is_active = 1', [Number(lenses.coating_id)]);
+          } else if (coatLabel && coatLabel.toLowerCase() !== 'none') {
+            coatRow = await db.get(
+              'SELECT price_inr FROM lens_coatings WHERE (LOWER(name) = LOWER(?) OR LOWER(name) LIKE LOWER(?)) AND is_active = 1 LIMIT 1',
+              [coatLabel, `%${coatLabel}%`]
+            );
+          }
+          if (coatRow) lensPrice += Number(coatRow.price_inr || 0);
         }
       }
+
+      const unitPrice = framePrice + lensPrice;
       const qty = Math.max(1, Number(it.quantity) || 1);
-      calculatedSubtotal += (price * qty);
+      calculatedSubtotal += (unitPrice * qty);
+      pricedItems.push({
+        ...it,
+        product_id: frameRow.product_id,
+        variant_id: it.variant_id || frameRow.variant_id || undefined,
+        frame_price_inr: framePrice,
+        lens_price_inr: lensPrice,
+        price_inr: unitPrice,
+        total_price_inr: unitPrice * qty
+      });
     }
 
     // Validate and apply promo code discount server-side if provided
@@ -215,7 +310,7 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
       year: 'numeric'
     });
 
-    const itemsJson = JSON.stringify(items);
+    const itemsJson = JSON.stringify(pricedItems);
 
     // Atomic transaction: inventory verification, decrement, movement audit, and order record
     let orderId = null;
@@ -376,7 +471,7 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
         tracking_carrier: 'BlueDart Express (Simulated Dispatch)',
         estimated_delivery: estimatedDelivery,
         whatsapp_url: whatsappUrl,
-        items
+        items: pricedItems
       }
     });
   } catch (err) {

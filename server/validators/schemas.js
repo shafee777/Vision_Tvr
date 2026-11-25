@@ -25,10 +25,18 @@ const orderCreateSchema = z.object({
   payment_method: z.enum(['online', 'cod']).default('online'),
   promo_code: z.string().trim().max(30).optional().nullable(),
   items: z.array(z.object({
+    product_id: z.number().int().positive().optional(),
     product_name: z.string().optional(),
+    name: z.string().optional(),
     variant_id: z.number().int().positive().optional(),
+    sku: z.string().trim().max(80).optional(),
+    color_name: z.string().optional(),
+    image_url: z.string().optional(),
+    dimensions: z.string().optional(),
     quantity: z.number().int().min(1).default(1),
     price_inr: z.number().nonnegative().optional(),
+    item_price_inr: z.number().nonnegative().optional(),
+    frame_price_inr: z.number().nonnegative().optional(),
     total_price_inr: z.number().nonnegative().optional(),
     configured_lenses: z.record(z.any()).optional().nullable()
   })).min(1, 'Shopping bag must contain at least one item.'),

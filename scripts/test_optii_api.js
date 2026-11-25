@@ -298,6 +298,42 @@ async function runTestSuite() {
       order.data, order.status
     );
 
+    // 17b. Server-Side Price Integrity (Tampered Client Price Ignored)
+    const tamperedOrder = await request('/api/orders', {
+      method: 'POST',
+      body: {
+        customer_name: 'Tamper Audit',
+        customer_phone: '+919486552324',
+        shipping_address: '42 MG Road, Anna Nagar',
+        city: 'Chennai',
+        state: 'Tamil Nadu',
+        pincode: '600040',
+        items: [
+          {
+            product_id: 1,
+            sku: 'OPT-HEN-01-TIG',
+            price_inr: 1,
+            item_price_inr: 1,
+            total_price_inr: 1,
+            quantity: 1,
+            configured_lenses: {
+              usage: 'Single Vision Distance',
+              index: '1.67 Super Thin',
+              coating: 'Blue Light Shield',
+              lens_price_inr: 0
+            }
+          }
+        ],
+        subtotal_inr: 1,
+        payment_method: 'online'
+      }
+    });
+    const tamperedTotal = tamperedOrder.data && tamperedOrder.data.order && tamperedOrder.data.order.total_amount_inr;
+    record('Server Ignores Tampered Client Price (12700 INR)', '/api/orders',
+      tamperedOrder.status === 201 && tamperedTotal === 12700,
+      { expected: 12700, actual: tamperedTotal }, tamperedOrder.status
+    );
+
     // 18. Public Order Tracking
     const track = await request(`/api/orders/track/${orderNo}`);
     record('Public Optical Order Tracking', `/api/orders/track/${orderNo}`, 
