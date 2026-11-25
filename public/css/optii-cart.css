@@ -1,0 +1,513 @@
+/* ═════════════════════════════════════════════════════════════════════
+   OPTII OPTICAL PLATFORM — SHOPPING BAG, CHECKOUT & TRACKING STYLES
+   Visual Reference: Ace & Tate High-Contrast Monochromatic Aesthetic
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. CART DRAWER ENHANCEMENTS ─── */
+.cart-drawer-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-item-card {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+  align-items: flex-start;
+}
+
+.cart-item-img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  background-color: var(--color-surface-subtle);
+  padding: 4px;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item-meta {
+  font-size: 12px;
+  color: var(--color-ink-muted);
+  margin-top: 2px;
+}
+
+.cart-item-lens-pill {
+  font-size: 11px;
+  background-color: var(--color-surface-subtle);
+  color: var(--color-ink-secondary);
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.cart-item-rx-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-left: 4px;
+  background-color: #ecfdf5;
+  color: #065f46;
+}
+
+.cart-item-rx-badge.later {
+  background-color: #fffbeb;
+  color: #92400e;
+}
+
+.cart-item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.cart-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  height: 28px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.cart-stepper-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-ink);
+  transition: background-color 0.15s ease;
+}
+
+.cart-stepper-btn:hover:not(:disabled) {
+  background-color: var(--color-surface-subtle);
+}
+
+.cart-stepper-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.cart-stepper-val {
+  min-width: 24px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.cart-item-price {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-ink);
+}
+
+.cart-item-remove-btn {
+  font-size: 11px;
+  color: #dc2626;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 10px;
+}
+
+.cart-item-remove-btn:hover {
+  color: #991b1b;
+}
+
+/* Promo Voucher Field in Cart */
+.cart-promo-section {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cart-promo-form {
+  display: flex;
+  gap: 8px;
+}
+
+.cart-promo-input {
+  flex: 1;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  padding: 0 14px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+
+.cart-promo-input:focus {
+  border-color: var(--color-ink);
+}
+
+.cart-promo-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cart-promo-btn:hover {
+  background: #333;
+}
+
+.cart-promo-applied {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0fdf4;
+  border: 1px dashed #86efac;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #166534;
+  margin-top: 8px;
+}
+
+.cart-promo-applied-remove {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ─── 2. CHECKOUT MODAL ─── */
+.checkout-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.checkout-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.checkout-modal-card {
+  background: #fff;
+  width: 100%;
+  max-width: 640px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.checkout-modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+}
+
+.checkout-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.checkout-stepper-bar {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+}
+
+.checkout-step-pill {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-muted);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.checkout-step-pill.active {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-ink);
+  background: #fff;
+}
+
+.checkout-step-pill.completed {
+  color: #166534;
+}
+
+.checkout-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.checkout-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.checkout-field-grid.single {
+  grid-template-columns: 1fr;
+}
+
+.checkout-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkout-form-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-secondary);
+}
+
+.checkout-form-input,
+.checkout-form-select {
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--color-ink);
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s ease;
+}
+
+.checkout-form-input:focus,
+.checkout-form-select:focus {
+  border-color: var(--color-ink);
+}
+
+/* Radio Choice Cards (Delivery & Payment) */
+.checkout-choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.checkout-choice-card:hover {
+  border-color: #999;
+}
+
+.checkout-choice-card.selected {
+  border-color: var(--color-ink);
+  background-color: var(--color-surface-subtle);
+}
+
+.checkout-choice-card input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--color-ink);
+}
+
+.checkout-choice-info {
+  flex: 1;
+}
+
+.checkout-choice-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.checkout-choice-desc {
+  font-size: 12px;
+  color: var(--color-ink-muted);
+  margin-top: 2px;
+}
+
+.checkout-choice-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.checkout-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+}
+
+/* Order Success State Inside Modal */
+.checkout-success-view {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.checkout-success-icon {
+  width: 56px;
+  height: 56px;
+  background-color: #ecfdf5;
+  color: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.checkout-success-order-num {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--color-surface-subtle);
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 1rem;
+}
+
+/* ─── 3. PUBLIC REAL-TIME ORDER TRACKING MODAL ─── */
+.order-track-modal-card {
+  max-width: 600px;
+}
+
+.track-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding: 1rem 0;
+}
+
+.track-stage {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.track-stage:last-child {
+  padding-bottom: 0;
+}
+
+.track-stage-line {
+  position: absolute;
+  top: 24px;
+  left: 11px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.track-stage.completed .track-stage-line {
+  background: #10b981;
+}
+
+.track-stage-bullet {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.track-stage.completed .track-stage-bullet {
+  border-color: #10b981;
+  background: #10b981;
+  color: #fff;
+}
+
+.track-stage.current .track-stage-bullet {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.track-stage-info {
+  flex: 1;
+}
+
+.track-stage-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.track-stage-desc {
+  font-size: 12px;
+  color: var(--color-ink-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .checkout-field-grid {
+    grid-template-columns: 1fr;
+  }
+}

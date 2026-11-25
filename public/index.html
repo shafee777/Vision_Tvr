@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Optii — Modern Optical E-Commerce & Retail Atelier</title>
+  <meta name="description" content="Discover handcrafted optical frames, sunglasses and precision prescription lenses. Free shipping, 30-day home trial and in-store computerised eye testing." />
+  <link rel="canonical" href="https://optii.in/" />
+
+  <!-- Open Graph / Social Discovery Metadata -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://optii.in/" />
+  <meta property="og:title" content="Optii — Modern Optical E-Commerce & Retail Atelier" />
+  <meta property="og:description" content="Discover handcrafted optical frames, sunglasses and precision prescription lenses with in-store computerised eye testing." />
+  <meta property="og:image" content="https://optii.in/images/products/henry_tortoise_front.png" />
+  <meta property="og:site_name" content="Optii Eyewear" />
+
+  <!-- Twitter Metadata -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Optii — Modern Optical E-Commerce & Retail Atelier" />
+  <meta name="twitter:description" content="Handcrafted optical frames, sunglasses and precision prescription lenses." />
+  <meta name="twitter:image" content="https://optii.in/images/products/henry_tortoise_front.png" />
+
+  <!-- JSON-LD Structured Data for Local Business & Optical Brand -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Optician",
+    "name": "Optii Eyewear & Optical Atelier",
+    "image": "https://optii.in/images/products/henry_tortoise_front.png",
+    "@id": "https://optii.in/#atelier",
+    "url": "https://optii.in/",
+    "telephone": "+919486552324",
+    "priceRange": "₹₹",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "42 North Street, Near South Temple Arch",
+      "addressLocality": "Thiruvarur",
+      "addressRegion": "Tamil Nadu",
+      "postalCode": "610001",
+      "addressCountry": "IN"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "09:30",
+        "closes": "20:30"
+      }
+    ]
+  }
+  </script>
+  
+  <link rel="icon" type="image/png" href="/images/favicon.png" />
+  <!-- Master Design System Styles (Ace & Tate Reference Standards) -->
+  <link rel="stylesheet" href="/css/optii.css" />
+  <link rel="stylesheet" href="/css/optii-cart.css" />
+  
+  <style>
+    /* Inline helper styling for modals & drawers */
+    .modal-backdrop-base {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 210;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop-base.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-box-card {
+      background: #ffffff;
+      width: 760px;
+      max-width: 96vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+    }
+    .slot-pill {
+      padding: 8px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 500;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .slot-pill:hover:not(.disabled) {
+      border-color: var(--color-ink);
+      background: var(--color-surface-subtle);
+    }
+    .slot-pill.selected {
+      background: var(--color-ink);
+      color: #ffffff;
+      border-color: var(--color-ink);
+    }
+    .slot-pill.disabled {
+      opacity: 0.35;
+      text-decoration: line-through;
+      cursor: not-allowed;
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. TOP PROMOTIONAL ANNOUNCEMENT BAR (36PX) -->
+  <aside class="announcement-bar" id="announcement-bar">
+    <span>50% off on any second pair of frames & lenses</span>
+    <a class="announcement-link" onclick="OptiiApp.filterByShape(''); window.scrollTo({top: 450, behavior: 'smooth'})">Shop Collection →</a>
+  </aside>
+
+  <!-- 2. MAIN FIXED HEADER (60PX) -->
+  <header class="site-header" id="site-header">
+    <div class="header-left">
+      <button class="mobile-menu-trigger" id="mobile-menu-trigger" aria-label="Open Navigation Menu" onclick="OptiiApp.toggleNavDrawer(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <a href="/" class="brand-logo" onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'})">
+        Optii <span>ATELIER</span>
+      </a>
+
+      <nav class="nav-links-desktop">
+        <a class="nav-item active" href="#glasses" onclick="event.preventDefault(); OptiiApp.state.category = 'glasses'; OptiiApp.loadProducts();">Glasses</a>
+        <a class="nav-item" href="#sunglasses" onclick="event.preventDefault(); OptiiApp.state.category = 'sunglasses'; OptiiApp.loadProducts();">Sunglasses</a>
+        <a class="nav-item" href="#accessories" onclick="event.preventDefault(); OptiiApp.state.category = 'accessories'; OptiiApp.loadProducts();">Accessories</a>
+        <a class="nav-item" href="#contact-lenses" onclick="event.preventDefault(); OptiiApp.state.category = 'contact_lenses'; OptiiApp.loadProducts();">Contact Lenses</a>
+        <a class="nav-item" href="#eyecare" onclick="event.preventDefault(); OptiiApp.state.category = 'eyecare'; OptiiApp.loadProducts();">Eye Care</a>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <button class="header-action-btn" id="header-search-btn" aria-label="Search Optical Collection">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+
+      <button class="header-action-btn" id="header-wishlist-btn" aria-label="View Saved Frames">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="header-badge" id="wishlist-badge" style="display: none;">0</span>
+      </button>
+
+      <button class="header-action-btn" id="header-track-btn" aria-label="Track Optical Order" title="Track Order" onclick="OptiiCart.openTrackModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </button>
+
+      <a href="/admin" class="header-action-btn" title="Staff Portal" aria-label="Staff Login">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+
+      <button class="header-action-btn" id="header-cart-btn" aria-label="View Optical Bag">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="header-badge" id="cart-badge" style="display: none;">0</span>
+      </button>
+
+      <button class="btn-book-test-header" id="btn-book-test-header">
+        <span>📅 Book Eye Test</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 3. SLIDE-OVER NAVIGATION DRAWER (MOBILE ACCORDIONS & DESKTOP MENU) -->
+  <div class="nav-drawer-backdrop" id="nav-drawer-backdrop"></div>
+  <aside class="nav-drawer" id="nav-drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Explore Collections</span>
+      <button class="drawer-close-btn" id="nav-drawer-close" aria-label="Close Navigation" onclick="OptiiApp.toggleNavDrawer(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-content">
+      <!-- Glasses Accordion -->
+      <div class="drawer-accordion open">
+        <button class="drawer-accordion-header" onclick="OptiiApp.toggleDrawerAccordion(this)">
+          <span>Glasses</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="drawer-accordion-body">
+          <a class="drawer-sublink" href="#all-glasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='glasses'; OptiiApp.loadProducts();">All Glasses</a>
+          <a class="drawer-sublink" href="#men-glasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='glasses'; OptiiApp.state.filters.gender='men'; OptiiApp.loadProducts();">Men's Glasses</a>
+          <a class="drawer-sublink" href="#women-glasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='glasses'; OptiiApp.state.filters.gender='women'; OptiiApp.loadProducts();">Women's Glasses</a>
+          <a class="drawer-sublink" href="#titanium" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.filters.material='Titanium'; OptiiApp.loadProducts();">Titanium Collection</a>
+        </div>
+      </div>
+
+      <!-- Sunglasses Accordion -->
+      <div class="drawer-accordion">
+        <button class="drawer-accordion-header" onclick="OptiiApp.toggleDrawerAccordion(this)">
+          <span>Sunglasses</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="drawer-accordion-body">
+          <a class="drawer-sublink" href="#all-sunglasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.loadProducts();">All Sunglasses</a>
+          <a class="drawer-sublink" href="#men-sunglasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.state.filters.gender='men'; OptiiApp.loadProducts();">Men's Sunglasses</a>
+          <a class="drawer-sublink" href="#women-sunglasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.state.filters.gender='women'; OptiiApp.loadProducts();">Women's Sunglasses</a>
+          <a class="drawer-sublink" href="#polarized" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.loadProducts();">Polarized Sunglasses</a>
+        </div>
+      </div>
+
+      <!-- Services & Eye Test -->
+      <div class="drawer-accordion">
+        <button class="drawer-accordion-header" onclick="OptiiApp.toggleDrawerAccordion(this)">
+          <span>Clinic & Eye Care</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="drawer-accordion-body">
+          <a class="drawer-sublink" href="#book" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.openAppointmentModal();">Book Eye Test</a>
+          <a class="drawer-sublink" href="#stores" onclick="OptiiApp.toggleNavDrawer(false); window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});">Store Clinic & Atelier</a>
+          <a class="drawer-sublink" href="#care" onclick="OptiiApp.toggleNavDrawer(false);">Lens Care & Maintenance</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <a class="whatsapp-direct-badge" href="https://wa.me/919486552324?text=Hi%20Optii,%20I%20have%20an%20order%20inquiry" target="_blank">
+        <span></span> Chat on WhatsApp (+91 94865 52324)
+      </a>
+      <a href="/admin" style="font-size: 13px; font-weight: 500; color: var(--color-ink); text-decoration: underline;">
+        Staff & Optometrist Portal →
+      </a>
+    </div>
+  </aside>
+
+  <!-- 4. EDITORIAL HERO CAMPAIGN SECTION -->
+  <section class="hero-editorial">
+    <img class="hero-bg-media" src="/images/interior.webp" alt="Optii Eyewear Campaign" />
+    <div class="hero-overlay">
+      <div class="hero-tag">New Season Eyewear · Autumn 2026</div>
+      <h1 class="hero-title">Architectural frames.<br>Engineered in millimeters.</h1>
+      <p class="hero-desc">Discover handcrafted bio-acetate and pure Japanese titanium silhouettes. Precision computerised eye testing and custom prescription lenses crafted in our atelier.</p>
+      <div class="hero-cta-group">
+        <button class="btn-pill-primary" onclick="OptiiApp.state.category='glasses'; OptiiApp.loadProducts(); window.scrollTo({top: 500, behavior: 'smooth'});">
+          Shop Glasses
+        </button>
+        <button class="btn-pill-secondary" onclick="OptiiApp.state.category='sunglasses'; OptiiApp.loadProducts(); window.scrollTo({top: 500, behavior: 'smooth'});">
+          Shop Sunglasses
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. SHAPES SHOWCASE STRIP (FILTER BY FRAME SILHOUETTE) -->
+  <section class="shapes-strip-section">
+    <div class="section-label">Browse by Frame Silhouette</div>
+    <div class="shapes-pills-row" id="shapes-pills-row">
+      <!-- Injected dynamically from /api/shapes -->
+    </div>
+  </section>
+
+  <!-- 6. STICKY FILTER STRIP & CATALOG SUMMARY -->
+  <div class="plp-filter-strip" id="plp-filter-strip">
+    <div class="filter-left-actions">
+      <button class="btn-open-filters" id="btn-open-filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span>All filters</span>
+      </button>
+      <span class="plp-items-count" id="plp-items-count">Loading…</span>
+    </div>
+
+    <div class="plp-sort-wrapper">
+      <select class="plp-sort-select" id="plp-sort-select" aria-label="Sort optical frames">
+        <option value="default">Sort: Default</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="newest">New Arrivals</option>
+        <option value="name_asc">Name: A to Z</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 7. SLIDE-OVER FILTER DRAWER (~530PX FROM LEFT) -->
+  <div class="filter-drawer-backdrop" id="filter-drawer-backdrop"></div>
+  <aside class="filter-drawer" id="filter-drawer">
+    <div class="filter-drawer-header">
+      <span class="filter-drawer-title">Filter Collection</span>
+      <button class="drawer-close-btn" id="filter-drawer-close" aria-label="Close Filter Drawer" onclick="OptiiApp.toggleFilterDrawer(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="filter-drawer-body">
+      <!-- Frame Shapes -->
+      <div>
+        <div class="filter-group-title">Frame Shape</div>
+        <div class="filter-shapes-grid" id="filter-shapes-grid">
+          <!-- Injected dynamically from /api/shapes -->
+        </div>
+      </div>
+
+      <!-- Frame Width / Fit -->
+      <div>
+        <div class="filter-group-title">Frame Fit</div>
+        <div class="filter-chips-wrap">
+          <button class="filter-pill-chip filter-fit-chip" data-fit="Narrow" onclick="OptiiApp.setFitFilter('Narrow')">Narrow (< 132mm)</button>
+          <button class="filter-pill-chip filter-fit-chip" data-fit="Medium" onclick="OptiiApp.setFitFilter('Medium')">Medium (133–138mm)</button>
+          <button class="filter-pill-chip filter-fit-chip" data-fit="Wide" onclick="OptiiApp.setFitFilter('Wide')">Wide (> 138mm)</button>
+        </div>
+      </div>
+
+      <!-- Gender -->
+      <div>
+        <div class="filter-group-title">Gender</div>
+        <div class="filter-chips-wrap">
+          <button class="filter-pill-chip filter-gender-chip" data-gender="unisex" onclick="OptiiApp.setGenderFilter('unisex')">Unisex</button>
+          <button class="filter-pill-chip filter-gender-chip" data-gender="men" onclick="OptiiApp.setGenderFilter('men')">Men</button>
+          <button class="filter-pill-chip filter-gender-chip" data-gender="women" onclick="OptiiApp.setGenderFilter('women')">Women</button>
+        </div>
+      </div>
+
+      <!-- Material -->
+      <div>
+        <div class="filter-group-title">Material</div>
+        <div class="filter-chips-wrap">
+          <button class="filter-pill-chip filter-mat-chip" data-mat="Bio-Acetate" onclick="OptiiApp.setMaterialFilter('Bio-Acetate')">Italian Bio-Acetate</button>
+          <button class="filter-pill-chip filter-mat-chip" data-mat="Titanium" onclick="OptiiApp.setMaterialFilter('Titanium')">Japanese Titanium</button>
+          <button class="filter-pill-chip filter-mat-chip" data-mat="Combi" onclick="OptiiApp.setMaterialFilter('Combi')">Combi Wire & Acetate</button>
+          <button class="filter-pill-chip filter-mat-chip" data-mat="Stainless" onclick="OptiiApp.setMaterialFilter('Stainless')">Stainless Steel</button>
+        </div>
+      </div>
+
+      <!-- Price Range -->
+      <div>
+        <div class="filter-group-title">Price (INR)</div>
+        <div class="filter-chips-wrap">
+          <button class="filter-pill-chip filter-price-chip" data-min="0" data-max="9000" onclick="OptiiApp.setPriceFilter(0, 9000)">Under ₹9,000</button>
+          <button class="filter-pill-chip filter-price-chip" data-min="9000" data-max="12000" onclick="OptiiApp.setPriceFilter(9000, 12000)">₹9,000 – ₹12,000</button>
+          <button class="filter-pill-chip filter-price-chip" data-min="12000" data-max="20000" onclick="OptiiApp.setPriceFilter(12000, 20000)">₹12,000 & Above</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-drawer-footer">
+      <button class="btn-filter-clear" id="btn-filter-clear">Clear all</button>
+      <button class="btn-filter-apply" id="btn-filter-apply">(6) Apply</button>
+    </div>
+  </aside>
+
+  <!-- 8. PRODUCT LISTING CATALOG CONTAINER (4-COL DESKTOP / 2-COL MOBILE) -->
+  <main class="plp-catalog-container">
+    <div class="product-grid" id="product-grid-container">
+      <!-- Injected dynamically from /api/products -->
+    </div>
+  </main>
+
+  <!-- 9. 2-COLUMN EDITORIAL SPLIT BANNER -->
+  <section class="editorial-split-section">
+    <div class="editorial-split-media">
+      <img src="/images/exterior.webp" alt="Optii Atelier Craftsmanship" />
+    </div>
+    <div class="editorial-split-content">
+      <div class="section-label">Optical Craftsmanship</div>
+      <h2 class="editorial-title">Designed with intention.<br>Refined in millimeters.</h2>
+      <p class="editorial-body">Every Optii frame undergoes a 60-step milling and hand-polishing process using biodegradable cellulose acetates and aircraft-grade Japanese titanium. Built for comfort, all-day balance, and timeless aesthetic clarity.</p>
+      <button class="btn-pill-primary" style="background-color: var(--color-ink); color: #fff;" onclick="window.scrollTo({top: 450, behavior: 'smooth'});">
+        Explore Optical Frames
+      </button>
+    </div>
+  </section>
+
+  <!-- 10. PHYSICAL CLINIC & EYE TEST APPOINTMENT BANNER -->
+  <section style="background-color: var(--color-surface-subtle); padding: 4rem var(--margin-desktop); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);">
+    <div style="max-width: var(--container-max); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap;">
+      <div>
+        <div class="section-label">In-Store Optometry</div>
+        <h2 style="font-size: 32px; font-weight: 500; margin-bottom: 8px;">Complimentary Eye Test With Every Pair</h2>
+        <p style="color: var(--color-ink-secondary); font-size: 15px; max-width: 580px;">Book an appointment with our senior optometrist at our flagship clinic in Thiruvarur. 30-minute comprehensive digital refractions, corneal assessment and custom lens fitting.</p>
+      </div>
+      <button class="btn-pill-primary" style="background-color: var(--color-ink); color: #ffffff;" onclick="OptiiApp.openAppointmentModal()">
+        📅 Reserve Appointment Slot
+      </button>
+    </div>
+  </section>
+
+  <!-- 11. SEARCH MODAL DIALOG -->
+  <div class="search-modal-backdrop" id="search-modal-backdrop">
+    <div class="search-modal-box">
+      <div class="search-modal-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-modal-input" id="search-modal-input" placeholder="Search frames, shapes, materials (e.g. Henry, Titanium, Round)…" autocomplete="off" />
+        <button id="search-modal-close" style="font-size: 14px; color: var(--color-ink-muted);">Esc</button>
+      </div>
+      <div class="search-modal-results" id="search-modal-results">
+        <div style="text-align: center; padding: 2rem; color: var(--color-ink-muted);">Type to search frames, brands, or materials…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. SLIDE-OUT CART / OPTICAL BAG DRAWER -->
+  <div class="nav-drawer-backdrop" id="cart-drawer-backdrop"></div>
+  <aside class="nav-drawer drawer-right" id="cart-drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Optical Bag</span>
+      <button class="drawer-close-btn" id="cart-drawer-close" aria-label="Close Bag" onclick="OptiiApp.toggleCartDrawer(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-content" id="cart-drawer-items">
+      <!-- Injected from localStorage -->
+    </div>
+    <div class="drawer-footer">
+      <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 600;">
+        <span>Subtotal</span>
+        <span id="cart-drawer-subtotal">₹0</span>
+      </div>
+      <div style="font-size: 11px; color: var(--color-ink-muted);">Includes GST, microfiber case, and complimentary lens cleaner.</div>
+      <button class="btn-pill-primary" style="background: var(--color-ink); color: #fff; text-align: center; width: 100%; margin-top: 8px;" onclick="OptiiCart.openCheckout()">
+        Proceed to Checkout
+      </button>
+    </div>
+  </aside>
+
+  <!-- 13. SLIDE-OUT WISHLIST DRAWER -->
+  <div class="nav-drawer-backdrop" id="wishlist-drawer-backdrop"></div>
+  <aside class="nav-drawer drawer-right" id="wishlist-drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Saved Frames</span>
+      <button class="drawer-close-btn" id="wishlist-drawer-close" aria-label="Close Wishlist" onclick="OptiiApp.toggleWishlistDrawer(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-content" id="wishlist-drawer-items">
+      <!-- Injected from localStorage -->
+    </div>
+  </aside>
+
+  <!-- 14. IN-STORE EYE TEST APPOINTMENT BOOKING MODAL -->
+  <div class="modal-backdrop-base" id="appointment-modal">
+    <div class="modal-box-card">
+      <div class="drawer-header">
+        <span class="drawer-title">Reserve In-Store Eye Test</span>
+        <button class="drawer-close-btn" onclick="OptiiApp.closeAppointmentModal()" aria-label="Close Appointment Modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;" onsubmit="OptiiApp.submitAppointment(event)">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Branch Location</label>
+          <div style="font-size: 14px; font-weight: 500; color: var(--color-ink);">Optii Flagship Clinic & Atelier — 12 Kamalalayam West Bank, Thiruvarur</div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Select Date</label>
+          <input type="date" id="appointment-date-input" style="width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: inherit;" onchange="OptiiApp.loadAppointmentSlots(this.value)" />
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Available 30-Min Time Slots</label>
+          <div id="appointment-slots-container" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Generated dynamically based on store hours & confirmed bookings -->
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Your Full Name</label>
+          <input type="text" id="app-name" required placeholder="e.g. S. Ramanathan" style="width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: inherit;" />
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Mobile Phone (for WhatsApp confirmation)</label>
+          <input type="tel" id="app-phone" required placeholder="+91 94865 52324" style="width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: inherit;" />
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Email (optional)</label>
+          <input type="email" id="app-email" placeholder="patient@example.com" style="width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: inherit;" />
+        </div>
+
+        <button type="submit" class="btn-pill-primary" style="background: var(--color-ink); color: #fff; width: 100%; padding: 12px; margin-top: 8px;">
+          Confirm Booking
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 15. QUICK PRODUCT DETAIL MODAL (PDP PREVIEW) -->
+  <div class="modal-backdrop-base" id="quick-pdp-modal">
+    <div class="modal-box-card" style="width: 820px;">
+      <div class="drawer-header">
+        <span class="drawer-title" id="pdp-modal-title">Frame Specifications</span>
+        <button class="drawer-close-btn" onclick="OptiiApp.closeProductDetail()" aria-label="Close Frame Details">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem;">
+        <div style="aspect-ratio: 1/1; background: var(--color-surface-subtle); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          <img id="pdp-modal-main-img" src="" alt="Frame Studio Shot" style="width: 100%; height: 100%; object-fit: contain; padding: 12px;" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div id="pdp-modal-price" style="font-size: 24px; font-weight: 600; margin-bottom: 8px;">₹0</div>
+            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--color-ink-muted); margin-bottom: 4px;">Dimensions</div>
+            <div id="pdp-modal-dimensions" style="font-size: 15px; font-weight: 500; margin-bottom: 12px;">51-20-150 mm</div>
+            
+            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--color-ink-muted); margin-bottom: 4px;">Material & Fit</div>
+            <div id="pdp-modal-material" style="font-size: 14px; margin-bottom: 12px;">Bio-Acetate</div>
+            
+            <p id="pdp-modal-desc" style="font-size: 13px; color: var(--color-ink-secondary); line-height: 1.5;"></p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 1.5rem;">
+            <button class="btn-pill-primary" style="background: var(--color-ink); color: #fff; width: 100%; text-align: center;" onclick="OptiiApp.addCurrentToCart()">
+              Add to Optical Bag
+            </button>
+            <button class="btn-pill-secondary" style="border-color: var(--color-border); color: var(--color-ink); width: 100%; text-align: center; gap: 8px;" onclick="OptiiApp.inquireOnWhatsApp()">
+              💬 Inquire & Order via WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. COMPLETE EDITORIAL FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-top-grid">
+      <div class="footer-brand-col">
+        <a href="/" class="brand-logo">Optii <span>ATELIER</span></a>
+        <p class="footer-tagline">Architectural European optical retail platform. Handcrafted bio-acetates, titanium wireframes and precision optometry eye testing.</p>
+        <a class="whatsapp-direct-badge" href="https://wa.me/919486552324" target="_blank">
+          <span></span> WhatsApp Concierge: +91 94865 52324
+        </a>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Collections</div>
+        <div class="footer-links-list">
+          <a class="footer-link" href="#glasses" onclick="OptiiApp.state.category='glasses'; OptiiApp.loadProducts();">All Glasses</a>
+          <a class="footer-link" href="#sunglasses" onclick="OptiiApp.state.category='sunglasses'; OptiiApp.loadProducts();">Sunglasses</a>
+          <a class="footer-link" href="#accessories" onclick="OptiiApp.state.category='accessories'; OptiiApp.loadProducts();">Accessories</a>
+          <a class="footer-link" href="#contact-lenses" onclick="OptiiApp.state.category='contact_lenses'; OptiiApp.loadProducts();">Contact Lenses</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Clinic & Care</div>
+        <div class="footer-links-list">
+          <a class="footer-link" href="#book" onclick="OptiiApp.openAppointmentModal()">Book Eye Test</a>
+          <a class="footer-link" href="#hours">Store Hours: Mon–Sat 10:00–20:00</a>
+          <a class="footer-link" href="#address">12 Kamalalayam West, Thiruvarur</a>
+          <a class="footer-link" href="/admin">Staff & Doctor Login</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Customer Care</div>
+        <div class="footer-links-list">
+          <a class="footer-link" href="#track" onclick="OptiiCart.openTrackModal(); return false;">Track Your Order</a>
+          <a class="footer-link" href="#returns">30-Day Return Guarantee</a>
+          <a class="footer-link" href="#shipping">Complimentary Courier Across India</a>
+          <a class="footer-link" href="#warranty">1-Year Lens Coating Warranty</a>
+          <a class="footer-link" href="#faq">Frequently Asked Questions</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom-strip">
+      <div>© 2026 Optii Optical Atelier. All rights reserved. Built specifically for Optii.</div>
+      <div>Precision Optics · Thiruvarur Atelier · ISO 9001 Certified Clinic</div>
+    </div>
+  </footer>
+
+  <!-- Scripts: Optii API Client, Cart & Checkout Engine, and Storefront Controller -->
+  <script src="/js/optii-api.js"></script>
+  <script src="/js/optii-cart.js"></script>
+  <script src="/js/optii-storefront.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+# ═════════════════════════════════════════════════════════════════════
+# OPTII OPTICAL PLATFORM — ROBOTS.TXT
+# Search Engine Crawling & Discovery Directives
+# ═════════════════════════════════════════════════════════════════════
+
+User-agent: *
+Allow: /
+Allow: /product/
+Allow: /track
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /data/
+Disallow: /uploads/prescriptions/
+
+# Host & XML Sitemap
+Host: https://optii.in
+Sitemap: https://optii.in/sitemap.xml

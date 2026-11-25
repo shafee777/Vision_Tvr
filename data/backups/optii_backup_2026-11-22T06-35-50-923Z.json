@@ -1,0 +1,31 @@
+{
+  "backup_file": "optii_backup_2026-11-22T06-35-50-923Z.db",
+  "source_db": "C:\\Users\\shafe\\Desktop\\Projects\\optii\\data\\optii.db",
+  "timestamp": "2026-11-22T06:35:50.952Z",
+  "size_bytes": 294912,
+  "sha256": "d600d52c29e1c9673d009c27b6272943c3a65bd5c1910478aa5f72b315cb6e5f",
+  "tables_active": 21,
+  "table_counts": {
+    "appointments": 13,
+    "audit_logs": 37,
+    "brands": 6,
+    "categories": 6,
+    "customer_enquiries": 26,
+    "eyecare_articles": 1,
+    "frame_shapes": 6,
+    "inventory_movements": 13,
+    "lens_coatings": 4,
+    "lens_thicknesses": 4,
+    "lens_usages": 6,
+    "orders": 26,
+    "prescriptions": 9,
+    "product_images": 36,
+    "product_variants": 19,
+    "products": 12,
+    "promo_codes": 3,
+    "site_settings": 4,
+    "store_hours": 7,
+    "stores": 1,
+    "users": 3
+  }
+}
