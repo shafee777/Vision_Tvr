@@ -412,11 +412,11 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
     // Build prefilled WhatsApp confirmation link for the order
     const businessPhone = config.WHATSAPP_PHONE.replace(/[^0-9]/g, '');
     const waLines = [
-      `*Optii Optical Order Confirmation*`,
+      `*Vision Opticals Order Confirmation*`,
       `━━━━━━━━━━━━━━━━━━━━`,
       `• *Order Number:* ${orderNumber}`,
       `• *Customer:* ${customer_name.trim()} (${cleanPhone})`,
-      `• *Delivery Mode:* ${delivery_method === 'pickup' ? 'Atelier Pickup (Thiruvarur)' : 'Express Insured Courier'}`,
+      `• *Delivery Mode:* ${delivery_method === 'pickup' ? 'Store Pickup (Thiruvarur)' : 'Express Insured Courier'}`,
       `• *Payment Method:* ${payment_method.toUpperCase()}`,
       `• *Total Amount:* ₹${calculatedTotal.toLocaleString('en-IN')}`,
       `• *Estimated Dispatch:* ${estimatedDelivery}`,
@@ -432,7 +432,7 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
     });
 
     waLines.push(`━━━━━━━━━━━━━━━━━━━━`);
-    waLines.push(`_Hello Optii Atelier, I have confirmed my optical order #${orderNumber}. Please proceed with lens glazing._`);
+    waLines.push(`_Hello Vision Opticals, I have confirmed my optical order #${orderNumber}. Please proceed with lens glazing._`);
 
     const waText = encodeURIComponent(waLines.join('\n'));
     const whatsappUrl = `https://wa.me/${businessPhone}?text=${waText}`;

@@ -51,7 +51,7 @@ function updateWelcomeBanner() {
       month: 'long',
       day: 'numeric'
     });
-    welcomeDateEl.textContent = `${todayFormatted} · Optii Flagship Optical Operations`;
+    welcomeDateEl.textContent = `${todayFormatted} · Vision Opticals Operations`;
   }
 }
 

@@ -339,7 +339,7 @@ async function seedOptii() {
   // 7. Seed Physical Optical Store & Operating Hours
   await db.run(
     `INSERT OR REPLACE INTO stores (id, name, address, city, phone, email, slot_interval_minutes, is_active)
-     VALUES (1, 'Optii Flagship Clinic & Atelier', '12 Kamalalayam West Bank, Near Railway Feeder Rd', 'Thiruvarur', '+91 94865 52324', 'care@optii.in', 30, 1)`
+     VALUES (1, 'Vision Opticals', '12 Kamalalayam West Bank, Near Railway Feeder Rd', 'Thiruvarur', '+91 94865 52324', 'care@optii.in', 30, 1)`
   );
 
   for (let day = 0; day <= 6; day++) {
@@ -372,7 +372,7 @@ async function seedOptii() {
   // 10. Seed Site Settings
   const settings = [
     { key: 'whatsapp_number', value: '+919486552324', description: 'Store WhatsApp business number' },
-    { key: 'store_name', value: 'Optii Eyewear & Clinic', description: 'Brand trading name' },
+    { key: 'store_name', value: 'Vision Opticals', description: 'Brand trading name' },
     { key: 'currency', value: 'INR', description: 'Platform base currency' },
     { key: 'announcement_text', value: '✨ Complimentary Computerised Eye Testing With Every Frame Purchase', description: 'Header announcement message' }
   ];

@@ -54,7 +54,7 @@ module.exports = {
   UPLOADS_DIR: path.join(PUBLIC_DIR, 'uploads'),
   PRESCRIPTIONS_DIR: path.join(DATA_DIR, 'prescriptions'),
   WHATSAPP_PHONE: process.env.WHATSAPP_PHONE || '+919486552324',
-  STORE_NAME: process.env.STORE_NAME || 'Optii Eyewear & Optical Atelier',
+  STORE_NAME: process.env.STORE_NAME || 'Vision Opticals',
   CORS_ORIGINS: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : null,
   
   // Payment Gateway Configuration

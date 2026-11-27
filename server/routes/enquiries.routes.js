@@ -30,7 +30,7 @@ router.post('/whatsapp', async (req, res) => {
     // Support both Multi-Item Shopping Bag Inquiries and Single Frame Inquiries
     if (items && Array.isArray(items) && items.length > 0) {
       lines = [
-        `*Optii Optical — Shopping Bag Inquiry*`,
+        `*Vision Opticals — Shopping Bag Inquiry*`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `• *Patron:* ${customer_name || 'Guest Patron'}`,
         customer_phone ? `• *Phone:* ${customer_phone}` : null,
@@ -48,10 +48,10 @@ router.post('/whatsapp', async (req, res) => {
 
       lines.push(`━━━━━━━━━━━━━━━━━━━━`);
       lines.push(`• *Estimated Bag Total:* ₹${Number(price || 0).toLocaleString('en-IN')}`);
-      lines.push(`_Hello Optii Atelier, I would like to inquire about stock availability & placing this order via WhatsApp._`);
+      lines.push(`_Hello Vision Opticals, I would like to inquire about stock availability & placing this order via WhatsApp._`);
     } else {
       lines = [
-        `*Optii Optical Order Inquiry*`,
+        `*Vision Opticals Order Inquiry*`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `• *Frame:* ${product_name || 'Optical Frame'} (${sku || 'N/A'})`,
         `• *Colorway:* ${color}`,
