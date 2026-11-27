@@ -47,7 +47,7 @@ export function switchSection(sectionId, options = {}) {
 
   const titleEl = document.getElementById('topbar-active-title');
   if (titleEl) {
-    titleEl.textContent = SECTION_TITLES[sectionId] || 'Atelier Administration';
+    titleEl.textContent = SECTION_TITLES[sectionId] || 'Vision Opticals Administration';
   }
 
   const sidebar = document.getElementById('admin-sidebar');

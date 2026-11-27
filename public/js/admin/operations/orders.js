@@ -69,7 +69,7 @@ export async function viewOrderDetail(orderNumber) {
         <div>
           <strong>Patron:</strong> ${escapeHtml(order.customer_name)} (${escapeHtml(order.customer_phone)})<br/>
           <strong>Email:</strong> ${escapeHtml(order.customer_email || '—')}<br/>
-          <strong>Delivery Mode:</strong> ${order.delivery_method === 'pickup' ? 'Atelier Collection (Thiruvarur)' : 'Express Courier'}
+          <strong>Delivery Mode:</strong> ${order.delivery_method === 'pickup' ? 'Store Pickup (Thiruvarur)' : 'Express Courier'}
         </div>
         <div>
           <strong>Destination:</strong> ${escapeHtml(order.shipping_address)}, ${escapeHtml(order.city)} — ${escapeHtml(order.pincode)}<br/>

@@ -33,7 +33,7 @@ export async function handleSaveSettings(event) {
   const phone = (document.getElementById('set-store-phone')?.value || '').trim();
 
   if (!name || !address || !phone) {
-    showToast('Atelier name, address, and WhatsApp number are required.', 'error');
+    showToast('Store name, address, and WhatsApp number are required.', 'error');
     return;
   }
 
@@ -59,7 +59,7 @@ export async function handleSaveSettings(event) {
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Save Atelier Settings';
+      submitBtn.textContent = 'Save Store Settings';
     }
   }
 }

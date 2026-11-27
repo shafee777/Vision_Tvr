@@ -127,7 +127,7 @@ const OptiiPDP = {
     if (!p || !v) return;
 
     // Document Title
-    document.title = `${p.name} — Optii Optical Atelier`;
+    document.title = `${p.name} — Vision Opticals`;
 
     // Breadcrumbs
     const bc = document.getElementById('pdp-breadcrumbs-container');

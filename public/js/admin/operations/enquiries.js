@@ -30,7 +30,7 @@ export async function loadEnquiries() {
       const cleanPhone = (enquiry.customer_phone || '').replace(/[^0-9]/g, '');
       const productRef = payload.product_name || (payload.items ? `${payload.items.length} item(s) in bag` : 'Optical Consultation');
       const waLink = cleanPhone
-        ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hello! Following up from Optii Atelier regarding ${productRef}.`)}`
+        ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hello! Following up from Vision Opticals regarding ${productRef}.`)}`
         : '';
 
       return `

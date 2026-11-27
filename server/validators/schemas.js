@@ -97,7 +97,7 @@ const passwordChangeSchema = z.object({
 });
 
 const clinicSettingsSchema = z.object({
-  name: z.string().trim().min(2, 'Atelier name must be at least 2 characters.').max(150),
+  name: z.string().trim().min(2, 'Store name must be at least 2 characters.').max(150),
   address: z.string().trim().min(5, 'Clinic address must be at least 5 characters.').max(300),
   phone: z.string().trim().min(8, 'Phone / WhatsApp number must be at least 8 digits.').max(25)
     .regex(/^[+0-9\s-]{8,25}$/, 'Invalid phone / WhatsApp number format.')

@@ -707,12 +707,12 @@ const OptiiApp = {
       if (modalBox) {
         const cleanPhone = phone.replace(/[^0-9]/g, '');
         const waText = encodeURIComponent(
-          `*Optii Atelier — Eye Test Appointment Confirmation*\n` +
+          `*Vision Opticals — Eye Test Appointment Confirmation*\n` +
           `• Appointment: ${res.appointment.appointment_number}\n` +
           `• Date & Time: ${date} at ${time}\n` +
           `• Patient: ${name} (${cleanPhone})\n` +
           `• Clinic: ${res.appointment.store_name} (${res.appointment.store_address})\n` +
-          `_Hello Optii Optometrist, I have booked an in-store eye test appointment._`
+          `_Hello Vision Opticals Optometrist, I have booked an in-store eye test appointment._`
         );
         const waUrl = `https://wa.me/919486552324?text=${waText}`;
 

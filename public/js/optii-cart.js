@@ -385,7 +385,7 @@ const OptiiCart = {
     backdrop.innerHTML = `
       <div class="checkout-modal-card">
         <div class="checkout-modal-header">
-          <span class="checkout-modal-title">Optii Atelier Checkout</span>
+          <span class="checkout-modal-title">Vision Opticals Checkout</span>
           <button class="drawer-close-btn" onclick="OptiiCart.closeCheckout()" aria-label="Close Checkout">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -539,7 +539,7 @@ const OptiiCart = {
     // ── STEP 2: SHIPPING / COLLECTION METHOD ──
     else if (step === 2) {
       body.innerHTML = `
-        <h4 style="font-size: 15px; font-weight: 600; margin-bottom: 1rem;">Select Shipping or Atelier Collection</h4>
+        <h4 style="font-size: 15px; font-weight: 600; margin-bottom: 1rem;">Select Shipping or Store Collection</h4>
 
         <label class="checkout-choice-card ${this.state.checkout.delivery_method === 'express' ? 'selected' : ''}">
           <input type="radio" name="del_method" value="express" ${this.state.checkout.delivery_method === 'express' ? 'checked' : ''} onchange="OptiiCart.setDeliveryMethod('express')" />
@@ -553,8 +553,8 @@ const OptiiCart = {
         <label class="checkout-choice-card ${this.state.checkout.delivery_method === 'pickup' ? 'selected' : ''}">
           <input type="radio" name="del_method" value="pickup" ${this.state.checkout.delivery_method === 'pickup' ? 'checked' : ''} onchange="OptiiCart.setDeliveryMethod('pickup')" />
           <div class="checkout-choice-info">
-            <div class="checkout-choice-title">Atelier Pickup & Custom Fitting</div>
-            <div class="checkout-choice-desc">Optii Flagship Clinic & Atelier (Old Bus Stand Road, Thiruvarur). Includes complimentary in-person ergonomic temple adjustment.</div>
+            <div class="checkout-choice-title">Store Pickup & Custom Fitting</div>
+            <div class="checkout-choice-desc">Vision Opticals (12 Kamalalayam West Bank, Thiruvarur). Includes complimentary in-person ergonomic temple adjustment.</div>
           </div>
           <div class="checkout-choice-price" style="color: #166534;">FREE</div>
         </label>
@@ -593,8 +593,8 @@ const OptiiCart = {
           <label class="checkout-choice-card ${this.state.checkout.payment_method === 'in_store' ? 'selected' : ''}">
             <input type="radio" name="pay_method" value="in_store" ${this.state.checkout.payment_method === 'in_store' ? 'checked' : ''} onchange="OptiiCart.setPaymentMethod('in_store')" />
             <div class="checkout-choice-info">
-              <div class="checkout-choice-title">Pay at Atelier Clinic</div>
-              <div class="checkout-choice-desc">Settle balance via card or cash when picking up your finished eyewear at the clinic.</div>
+              <div class="checkout-choice-title">Pay at Store</div>
+              <div class="checkout-choice-desc">Settle balance via card or cash when picking up your finished eyewear at Vision Opticals.</div>
             </div>
           </label>
         ` : ''}
@@ -617,7 +617,7 @@ const OptiiCart = {
           <div style="font-weight: 600; margin-bottom: 4px;">Delivering to:</div>
           <div>${this.state.checkout.customer_name} · +91 ${this.state.checkout.customer_phone}</div>
           <div style="color: var(--color-ink-secondary); margin-top: 2px;">${this.state.checkout.shipping_address}, ${this.state.checkout.city}, ${this.state.checkout.state} — ${this.state.checkout.pincode}</div>
-          <div style="margin-top: 6px; font-size: 12px;"><strong>Method:</strong> ${this.state.checkout.delivery_method === 'pickup' ? 'Atelier Pickup (Thiruvarur)' : 'Express Insured Courier'} · <strong>Payment:</strong> ${this.state.checkout.payment_method.toUpperCase()}</div>
+          <div style="margin-top: 6px; font-size: 12px;"><strong>Method:</strong> ${this.state.checkout.delivery_method === 'pickup' ? 'Store Pickup (Thiruvarur)' : 'Express Insured Courier'} · <strong>Payment:</strong> ${this.state.checkout.payment_method.toUpperCase()}</div>
         </div>
 
         <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">Order Items (${this.state.cart.length}):</div>
@@ -714,7 +714,7 @@ const OptiiCart = {
     const btn = document.getElementById('btn-submit-order');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Allocating Atelier Inventory…';
+      btn.textContent = 'Confirming Order…';
     }
 
     const { subtotal, discount } = this.calculateTotals();
@@ -830,7 +830,7 @@ const OptiiCart = {
     const container = document.getElementById('track-results-container');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-ink-muted);">Retrieving atelier status…</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-ink-muted);">Retrieving order status…</div>';
 
     try {
       const res = await OptiiAPI.trackOrder(orderNumber);
