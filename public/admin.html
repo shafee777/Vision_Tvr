@@ -415,8 +415,45 @@
                       <div class="panel-subtitle">One row per colour variant. Rows sharing the same Master SKU automatically group under one frame.</div>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(false)">Download Blank Template (CSV)</button>
-                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(true)">Download Sample File (CSV)</button>
+                      <button type="button" class="btn-primary btn-sm" onclick="OptiiAdmin.downloadFriendlyCatalogueTemplate()">Download Excel Template with Examples (CSV)</button>
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(false)">Blank Technical Template</button>
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(true)">Legacy Sample CSV</button>
+                    </div>
+                  </div>
+
+                  <!-- Store-Owner Measurement Guide & Diagram -->
+                  <div class="dimension-guide-box">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Frame Measurement Guide (All measurements in millimeters — mm)</div>
+                    <div class="dimension-guide-grid">
+                      <svg viewBox="0 0 280 120" fill="none" stroke="currentColor" stroke-width="1.5" style="width:100%;max-width:280px;background:#fff;border:1px solid var(--border-light);border-radius:6px;padding:6px;" aria-label="Optical frame measurements diagram showing lens width, bridge width, frame height, total width, and temple length">
+                        <!-- Frame Front -->
+                        <rect x="26" y="28" width="66" height="44" rx="10" stroke="#111827" stroke-width="2" />
+                        <rect x="114" y="28" width="66" height="44" rx="10" stroke="#111827" stroke-width="2" />
+                        <path d="M92 44 C98 38, 108 38, 114 44" stroke="#111827" stroke-width="2" />
+                        <line x1="16" y1="42" x2="26" y2="42" stroke="#111827" stroke-width="2" />
+                        <line x1="180" y1="42" x2="190" y2="42" stroke="#111827" stroke-width="2" />
+                        <!-- Temple Arm -->
+                        <path d="M190 42 L254 42 C262 42, 266 50, 262 62" stroke="#111827" stroke-width="2" />
+                        <!-- Dimension Callouts -->
+                        <line x1="26" y1="84" x2="92" y2="84" stroke="#2563eb" />
+                        <text x="59" y="96" font-size="9" text-anchor="middle" fill="#1d4ed8" stroke="none" font-family="sans-serif">Lens Width</text>
+                        <line x1="92" y1="20" x2="114" y2="20" stroke="#059669" />
+                        <text x="103" y="14" font-size="9" text-anchor="middle" fill="#047857" stroke="none" font-family="sans-serif">Bridge</text>
+                        <line x1="196" y1="28" x2="196" y2="72" stroke="#7c3aed" />
+                        <text x="200" y="54" font-size="8.5" fill="#6d28d9" stroke="none" font-family="sans-serif">Height</text>
+                        <line x1="16" y1="108" x2="190" y2="108" stroke="#374151" stroke-dasharray="3 2" />
+                        <text x="103" y="117" font-size="9" text-anchor="middle" fill="#111827" stroke="none" font-family="sans-serif">Total Frame Width</text>
+                        <line x1="192" y1="26" x2="262" y2="26" stroke="#b45309" />
+                        <text x="227" y="18" font-size="9" text-anchor="middle" fill="#92400e" stroke="none" font-family="sans-serif">Temple Length</text>
+                      </svg>
+                      <div style="font-size:12px;color:var(--ink-secondary);line-height:1.55;">
+                        <div><strong>Lens width (<code>lens_width_mm</code>):</strong> Width of one lens horizontally (typically 44–60 mm).</div>
+                        <div><strong>Bridge width (<code>bridge_width_mm</code>):</strong> Distance across the nose bridge between lenses (typically 14–24 mm).</div>
+                        <div><strong>Temple length (<code>temple_length_mm</code>):</strong> Side arm length from hinge to ear tip (typically 135–150 mm).</div>
+                        <div><strong>Frame height (<code>frame_height_mm</code>):</strong> Vertical height of the lens/frame (recommended, mm).</div>
+                        <div><strong>Total frame width (<code>total_width_mm</code>):</strong> Overall front width from left hinge to right hinge (recommended, mm).</div>
+                        <div style="margin-top:6px;"><em>Tip: Look inside any eyeglass temple arm — e.g. <code>52 □ 18 - 145</code> means Lens 52 mm, Bridge 18 mm, Temple 145 mm.</em></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -719,25 +756,42 @@
             </div>
           </section>
 
-          <!-- ═════════ SECTION 4: LENS PRICING ═════════ -->
+          <!-- ═════════ SECTION 4: LENS PRICING (ALL 4 STEPS) ═════════ -->
           <section id="sec-lenses" class="admin-section">
             <div class="section-header-bar">
               <div>
                 <h2 class="section-h2">Lens Pricing &amp; Optical Tiers</h2>
-                <p class="section-desc">Configure lens usages, refractive index thickness upgrades, and protective coatings in INR.</p>
+                <p class="section-desc">Configure all 4 customer lens configurator steps: Usage, Prescription rules, Thickness index, and Coatings.</p>
               </div>
             </div>
 
-            <div class="card-table-wrap" style="margin-bottom:1.5rem;">
-              <div class="table-filter-bar"><strong>Step 1 — Lens Usage Types</strong></div>
+            <div class="card-table-wrap" style="margin-bottom:1.25rem;">
+              <div class="table-filter-bar">
+                <strong>Step 1 — Lens Usage Types</strong>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.openLensModal('usage')">+ Add Usage</button>
+              </div>
               <table class="admin-table">
                 <thead><tr><th>Usage Type</th><th>Clinical Description</th><th>Base Fee (INR)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="lenses-usages-body"></tbody>
               </table>
             </div>
 
-            <div class="card-table-wrap" style="margin-bottom:1.5rem;">
-              <div class="table-filter-bar"><strong>Step 3 — Refractive Index Thickness</strong></div>
+            <div class="card-table-wrap" style="margin-bottom:1.25rem;">
+              <div class="table-filter-bar">
+                <strong>Step 2 — Prescription Entry &amp; Verification Rules</strong>
+                <span style="font-size:12px;color:var(--ink-secondary);">Controls upload, manual input bounds, and WhatsApp follow-up pricing</span>
+              </div>
+              <table class="admin-table">
+                <thead><tr><th>Prescription Method</th><th>Clinical Input Bounds</th><th>Verification Fee (INR)</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="lenses-rx-body"></tbody>
+              </table>
+            </div>
+
+            <div class="card-table-wrap" style="margin-bottom:1.25rem;">
+              <div class="table-filter-bar">
+                <strong>Step 3 — Refractive Index Thickness</strong>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.openLensModal('thickness')">+ Add Thickness</button>
+              </div>
               <table class="admin-table">
                 <thead><tr><th>Index Profile</th><th>Recommended Diopter Range</th><th>Add-on Surcharge (INR)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="lenses-thicknesses-body"></tbody>
@@ -745,7 +799,10 @@
             </div>
 
             <div class="card-table-wrap">
-              <div class="table-filter-bar"><strong>Step 4 — Coatings &amp; Treatments</strong></div>
+              <div class="table-filter-bar">
+                <strong>Step 4 — Coatings &amp; Treatments</strong>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.openLensModal('coating')">+ Add Coating</button>
+              </div>
               <table class="admin-table">
                 <thead><tr><th>Coating Formulation</th><th>Protection Profile</th><th>Add-on Surcharge (INR)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="lenses-coatings-body"></tbody>
@@ -753,51 +810,57 @@
             </div>
           </section>
 
-          <!-- ═════════ SECTION 5: BRANDS & SHAPES ═════════ -->
+          <!-- ═════════ SECTION 5: BRANDS, SHAPES & CATEGORIES ═════════ -->
           <section id="sec-taxonomy" class="admin-section">
             <div class="section-header-bar">
               <div>
                 <h2 class="section-h2">Brands, Shapes &amp; Categories</h2>
-                <p class="section-desc">Manage catalog taxonomy referenced during single-frame creation and bulk imports.</p>
+                <p class="section-desc">Dynamically manage optical brands, frame silhouettes, and product categories synced to admin forms and the storefront.</p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;" data-role-guard="admin">
+                <button type="button" class="btn-primary btn-sm" onclick="OptiiAdmin.openBrandModal()">+ Add Brand</button>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.openShapeModal()">+ Add Shape</button>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.openCategoryModal()">+ Add Category</button>
               </div>
             </div>
 
-            <div class="panel-card" style="margin-bottom:1.25rem;" data-role-guard="admin">
-              <div class="panel-title">Add New Brand</div>
-              <form class="form-grid-3" onsubmit="OptiiAdmin.handleCreateBrand(event)" style="align-items:end;">
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label" for="tax-brand-name">Brand Name</label>
-                  <input type="text" id="tax-brand-name" name="name" class="form-control" placeholder="e.g. Lindberg Atelier" required />
+            <div class="card-table-wrap" style="margin-bottom:1.25rem;">
+              <div class="table-filter-bar">
+                <strong>Optical Brands</strong>
+                <div class="table-filter-group">
+                  <input type="text" id="taxonomy-brand-search" class="admin-search-input" placeholder="Search brands…" oninput="OptiiAdmin.filterTaxonomyList('brands', this.value, 'Search')" />
+                  <select class="admin-select" onchange="OptiiAdmin.filterTaxonomyList('brands', this.value, 'Status')" aria-label="Filter brands by status">
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Disabled Only</option>
+                  </select>
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                  <label class="form-label" for="tax-brand-slug">URL Slug (optional)</label>
-                  <input type="text" id="tax-brand-slug" name="slug" class="form-control" placeholder="lindberg-atelier" />
-                </div>
-                <div>
-                  <button type="submit" class="btn-primary">Add Brand</button>
-                </div>
-              </form>
+              </div>
+              <table class="admin-table">
+                <thead><tr><th>Brand &amp; Logo</th><th>Slug</th><th>Catalog</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="taxonomy-brands-body"></tbody>
+              </table>
             </div>
 
-            <div class="form-grid-3">
+            <div class="form-grid-2">
               <div class="card-table-wrap">
-                <div class="table-filter-bar"><strong>Optical Brands</strong></div>
+                <div class="table-filter-bar">
+                  <strong>Frame Shapes</strong>
+                  <input type="text" id="taxonomy-shape-search" class="admin-search-input" style="max-width:200px;" placeholder="Search shapes…" oninput="OptiiAdmin.filterTaxonomyList('shapes', this.value)" />
+                </div>
                 <table class="admin-table">
-                  <thead><tr><th>Brand</th><th>Slug</th><th>Catalog</th><th>Action</th></tr></thead>
-                  <tbody id="taxonomy-brands-body"></tbody>
-                </table>
-              </div>
-              <div class="card-table-wrap">
-                <div class="table-filter-bar"><strong>Frame Shapes</strong></div>
-                <table class="admin-table">
-                  <thead><tr><th>Silhouette</th><th>Slug</th><th>Count</th><th>Action</th></tr></thead>
+                  <thead><tr><th>Silhouette</th><th>Slug</th><th>Usage</th><th>Status</th><th>Action</th></tr></thead>
                   <tbody id="taxonomy-shapes-body"></tbody>
                 </table>
               </div>
+
               <div class="card-table-wrap">
-                <div class="table-filter-bar"><strong>Categories</strong></div>
+                <div class="table-filter-bar">
+                  <strong>Product Categories</strong>
+                  <input type="text" id="taxonomy-cat-search" class="admin-search-input" style="max-width:200px;" placeholder="Search categories…" oninput="OptiiAdmin.filterTaxonomyList('categories', this.value)" />
+                </div>
                 <table class="admin-table">
-                  <thead><tr><th>Category</th><th>Slug</th><th>Items</th><th>Action</th></tr></thead>
+                  <thead><tr><th>Category &amp; Type</th><th>Slug</th><th>Items</th><th>Status</th><th>Action</th></tr></thead>
                   <tbody id="taxonomy-cats-body"></tbody>
                 </table>
               </div>
@@ -934,30 +997,112 @@
             </div>
           </section>
 
-          <!-- ═════════ SECTION 11: STORE SETTINGS ═════════ -->
+          <!-- ═════════ SECTION 11: STORE SETTINGS, LOGO & HOURS ═════════ -->
           <section id="sec-settings" class="admin-section" data-role-guard="admin">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Store &amp; Clinic Settings</h2>
-                <p class="section-desc">Clinic identity, physical address, and WhatsApp business contact number.</p>
+                <h2 class="section-h2">Store Identity, Branding &amp; Settings</h2>
+                <p class="section-desc">Configure store logo, identity, WhatsApp routing, contact links, and weekly hours reflected on the storefront.</p>
               </div>
             </div>
-            <div class="card-table-wrap" style="max-width:640px;padding:1.5rem;">
-              <form onsubmit="OptiiAdmin.handleSaveSettings(event)">
-                <div class="form-group">
-                  <label class="form-label" for="set-store-name">Store Name</label>
-                  <input type="text" id="set-store-name" class="form-control" required />
+
+            <div class="form-grid-2" style="align-items:start;">
+              <div class="card-table-wrap" style="padding:1.5rem;">
+                <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Store Logo</h3>
+                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                  <div class="store-logo-preview" id="set-store-logo-preview">
+                    <span style="font-size:12px;color:var(--ink-secondary);">Loading logo…</span>
+                  </div>
+                  <div style="flex:1;min-width:200px;">
+                    <input type="file" id="set-store-logo-input" accept="image/jpeg,image/png,image/webp" class="form-control" style="padding:6px;margin-bottom:8px;" onchange="OptiiAdmin.previewStoreLogoFile(this)" />
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <button type="button" class="btn-primary btn-sm" id="btn-upload-store-logo" onclick="OptiiAdmin.uploadStoreLogo()">Upload Logo</button>
+                      <button type="button" class="btn-danger btn-sm" id="btn-remove-store-logo" onclick="OptiiAdmin.removeStoreLogo()" style="display:none;">Remove Logo</button>
+                    </div>
+                    <div style="font-size:12px;color:var(--ink-secondary);margin-top:6px;">Accepted: JPEG, PNG, or WebP (max 5 MB). Automatically optimized for header display.</div>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label" for="set-store-address">Clinic Physical Address</label>
-                  <textarea id="set-store-address" class="form-control" style="min-height:70px;" required></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="set-store-phone">Official WhatsApp Routing Number</label>
-                  <input type="text" id="set-store-phone" class="form-control" required />
-                </div>
-                <button type="submit" class="btn-primary">Save Store Settings</button>
-              </form>
+
+                <hr style="border:none;border-top:1px solid var(--border-light);margin:1.25rem 0;" />
+
+                <form onsubmit="OptiiAdmin.handleSaveSettings(event)">
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-name">Store Name *</label>
+                      <input type="text" id="set-store-name" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-city">City</label>
+                      <input type="text" id="set-store-city" class="form-control" placeholder="Thiruvarur" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="set-store-desc">Store Tagline / Description</label>
+                    <textarea id="set-store-desc" class="form-control" style="min-height:60px;" placeholder="Handcrafted optical frames and computerised eye testing…"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="set-store-address">Clinic Physical Address *</label>
+                    <textarea id="set-store-address" class="form-control" style="min-height:64px;" required></textarea>
+                  </div>
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-phone">Primary Phone Number *</label>
+                      <input type="text" id="set-store-phone" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-whatsapp">WhatsApp Business Number</label>
+                      <input type="text" id="set-store-whatsapp" class="form-control" placeholder="+91 94865 52324" />
+                    </div>
+                  </div>
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-email">Store Email</label>
+                      <input type="email" id="set-store-email" class="form-control" placeholder="care@optii.in" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-slot-interval">Eye Test Slot Duration (mins)</label>
+                      <select id="set-store-slot-interval" class="form-control">
+                        <option value="20">20 minutes</option>
+                        <option value="30" selected>30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="set-store-announcement">Top Announcement Bar Text</label>
+                    <input type="text" id="set-store-announcement" class="form-control" placeholder="Complimentary Computerised Eye Testing With Every Frame Purchase" />
+                  </div>
+                  <div class="form-grid-3">
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-map-url">Google Maps Link</label>
+                      <input type="url" id="set-store-map-url" class="form-control" placeholder="https://maps.google.com/..." />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-instagram">Instagram URL</label>
+                      <input type="url" id="set-store-instagram" class="form-control" placeholder="https://instagram.com/..." />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="set-store-facebook">Facebook URL</label>
+                      <input type="url" id="set-store-facebook" class="form-control" placeholder="https://facebook.com/..." />
+                    </div>
+                  </div>
+
+                  <div style="margin-top:1rem;border-top:1px solid var(--border-light);padding-top:1rem;">
+                    <h4 style="font-size:13px;font-weight:700;margin-bottom:8px;">Weekly Operating Hours</h4>
+                    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                      <table class="admin-table" style="font-size:12px;min-width:420px;">
+                        <thead><tr><th>Day</th><th>Status</th><th>Opens</th><th>Closes</th></tr></thead>
+                        <tbody id="set-store-hours-body"></tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:1.25rem;">
+                    <button type="submit" class="btn-primary">Save Store Settings</button>
+                  </div>
+                </form>
+              </div>
             </div>
           </section>
 
@@ -968,80 +1113,136 @@
 
   <!-- ═════════ 3. ACCESSIBLE MODALS ═════════ -->
 
-  <!-- Guided Modal: Add Single Master Frame (+ Optional First Variant) -->
+  <!-- Guided Modal: Add Single Master Frame (+ First Variant & 1-5 Product Images) -->
   <div id="modal-new-product" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="new-product-modal-title" aria-hidden="true">
     <div class="admin-modal-card wide">
       <div class="admin-modal-header">
         <h3 class="admin-modal-title" id="new-product-modal-title">Add Single Optical Frame</h3>
         <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-new-product')" aria-label="Close">✕</button>
       </div>
-      <form onsubmit="OptiiAdmin.handleCreateProduct(event)">
+      <form id="new-product-form" onsubmit="OptiiAdmin.handleCreateProduct(event)" novalidate>
         <div class="admin-modal-body">
-          <div class="form-section-box">
-            <div class="form-section-heading">1. Basic Information</div>
-            <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Frame Name *</label><input type="text" name="name" class="form-control" placeholder="e.g. Akira Bold Round" required /></div>
-              <div class="form-group"><label class="form-label">URL Slug</label><input type="text" name="slug" class="form-control" placeholder="auto-generated if blank" /></div>
-              <div class="form-group"><label class="form-label">Master Frame SKU *</label><input type="text" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01" required /></div>
-            </div>
-          </div>
+          <div id="new-prod-error-banner" class="error-list-box" style="display:none;margin-bottom:12px;"></div>
 
           <div class="form-section-box">
-            <div class="form-section-heading">2. Classification</div>
+            <div class="form-section-heading">1. Master Frame Information</div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="new-prod-name">Frame Name *</label>
+                <input type="text" id="new-prod-name" name="name" class="form-control" placeholder="e.g. Akira Bold Round" minlength="2" required oninput="OptiiAdmin.handleNewProdNameInput(this.value)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-slug">URL Slug</label>
+                <input type="text" id="new-prod-slug" name="slug" class="form-control" placeholder="auto-generated from name" oninput="this.dataset.manualEdited = '1'" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-sku">Master Frame SKU *</label>
+                <input type="text" id="new-prod-sku" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01" minlength="2" required oninput="OptiiAdmin.autoGenerateVariantSku()" />
+              </div>
+            </div>
             <div class="form-grid-3">
               <div class="form-group"><label class="form-label" for="new-prod-brand">Brand *</label><select name="brand_id" id="new-prod-brand" class="form-control" required></select></div>
               <div class="form-group"><label class="form-label" for="new-prod-category">Category *</label><select name="category_id" id="new-prod-category" class="form-control" required></select></div>
               <div class="form-group"><label class="form-label" for="new-prod-shape">Frame Shape *</label><select name="shape_id" id="new-prod-shape" class="form-control" required></select></div>
             </div>
-          </div>
-
-          <div class="form-section-box">
-            <div class="form-section-heading">3. Frame Specifications</div>
             <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Material *</label><input type="text" name="material" class="form-control" placeholder="Italian Bio-Acetate" required /></div>
               <div class="form-group">
-                <label class="form-label">Frame Fit *</label>
-                <select name="frame_fit" class="form-control" required>
+                <label class="form-label" for="new-prod-frame-type">Frame Type *</label>
+                <select id="new-prod-frame-type" name="frame_type" class="form-control">
+                  <option value="Full Rim">Full Rim</option>
+                  <option value="Semi-Rimless">Semi-Rimless</option>
+                  <option value="Rimless">Rimless</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-material">Material *</label>
+                <input type="text" id="new-prod-material" name="material" class="form-control" placeholder="Italian Bio-Acetate" value="Bio-Acetate" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-fit">Frame Fit *</label>
+                <select id="new-prod-fit" name="frame_fit" class="form-control" required>
                   <option value="Medium">Medium Fit</option>
                   <option value="Narrow">Narrow Fit</option>
                   <option value="Wide">Wide Fit</option>
                 </select>
               </div>
+            </div>
+            <div class="form-grid-3">
               <div class="form-group">
-                <label class="form-label">Gender *</label>
-                <select name="gender" class="form-control" required>
+                <label class="form-label" for="new-prod-gender">Target Gender *</label>
+                <select id="new-prod-gender" name="gender" class="form-control" required>
                   <option value="unisex">Unisex</option>
                   <option value="men">Men</option>
                   <option value="women">Women</option>
                 </select>
               </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-price">Base Retail Price (₹ INR) *</label>
+                <input type="number" id="new-prod-price" name="base_price_inr" class="form-control" placeholder="4500" min="1" required />
+              </div>
+              <div class="form-group" style="display:flex;align-items:flex-end;">
+                <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding-bottom:8px;cursor:pointer;">
+                  <input type="checkbox" name="is_active" checked /> Active on Storefront
+                </label>
+              </div>
             </div>
+            <div class="form-group">
+              <label class="form-label" for="new-prod-desc">Description</label>
+              <textarea id="new-prod-desc" name="description" class="form-control" style="min-height:60px;" placeholder="Handcrafted optical frame with custom spring hinges…"></textarea>
+            </div>
+          </div>
+
+          <div class="form-section-box">
+            <div class="form-section-heading">2. Optical Millimeter Dimensions</div>
             <div class="form-grid-3">
               <div class="form-group"><label class="form-label">Lens Width (mm) *</label><input type="number" name="lens_width_mm" class="form-control" value="51" min="30" max="75" required /></div>
               <div class="form-group"><label class="form-label">Bridge Width (mm) *</label><input type="number" name="bridge_width_mm" class="form-control" value="20" min="10" max="35" required /></div>
-              <div class="form-group"><label class="form-label">Temple Length (mm) *</label><input type="number" name="temple_length_mm" class="form-control" value="150" min="100" max="180" required /></div>
+              <div class="form-group"><label class="form-label">Temple Length (mm) *</label><input type="number" name="temple_length_mm" class="form-control" value="145" min="100" max="180" required /></div>
             </div>
-          </div>
-
-          <div class="form-section-box">
-            <div class="form-section-heading">4. Pricing &amp; Description</div>
             <div class="form-grid-2">
-              <div class="form-group"><label class="form-label">Base Retail Price (₹ INR) *</label><input type="number" name="base_price_inr" class="form-control" placeholder="9500" min="1" required /></div>
-              <div class="form-group"><label class="form-label">Description</label><input type="text" name="description" class="form-control" placeholder="Handcrafted optical frame…" /></div>
+              <div class="form-group"><label class="form-label">Frame Height (mm, optional)</label><input type="number" name="frame_height_mm" class="form-control" placeholder="e.g. 42" min="20" max="90" /></div>
+              <div class="form-group"><label class="form-label">Total Frame Width (mm, optional)</label><input type="number" name="total_width_mm" class="form-control" placeholder="e.g. 138" min="90" max="200" /></div>
             </div>
           </div>
 
           <div class="form-section-box">
-            <div class="form-section-heading">5. First Colour Variant &amp; 6. Opening Stock (Optional)</div>
+            <div class="form-section-heading">3. Initial Colour Variant &amp; Opening Stock</div>
             <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Variant SKU</label><input type="text" name="initial_variant_sku" class="form-control" placeholder="e.g. OPT-AKR-01-BLK" /></div>
-              <div class="form-group"><label class="form-label">Colour Name</label><input type="text" name="initial_color_name" class="form-control" placeholder="Matte Black" /></div>
-              <div class="form-group"><label class="form-label">Colour Hex (#RRGGBB)</label><input type="text" name="initial_color_hex" class="form-control" placeholder="#111111" /></div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-color-name">Colour Name *</label>
+                <input type="text" id="new-prod-color-name" name="initial_color_name" class="form-control" placeholder="Matte Black" required oninput="OptiiAdmin.autoGenerateVariantSku()" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-var-sku">Variant SKU *</label>
+                <input type="text" id="new-prod-var-sku" name="initial_variant_sku" class="form-control" placeholder="e.g. OPT-AKR-01-BLK" required oninput="this.dataset.manualEdited = '1'" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-color-hex">Colour Hex (#RRGGBB) *</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <input type="color" id="new-prod-color-picker" value="#111111" style="width:38px;height:36px;padding:2px;border:1px solid var(--border-medium);border-radius:4px;cursor:pointer;" oninput="OptiiAdmin.updateNewProdColorHex('picker')" aria-label="Pick colour" />
+                  <input type="text" id="new-prod-color-hex" name="initial_color_hex" class="form-control" value="#111111" placeholder="#111111" required oninput="OptiiAdmin.updateNewProdColorHex('text')" />
+                </div>
+              </div>
             </div>
-            <div class="form-grid-2">
-              <div class="form-group"><label class="form-label">Opening Stock</label><input type="number" name="initial_opening_stock" class="form-control" value="0" min="0" /></div>
-              <div class="form-group"><label class="form-label">Variant Price Override (₹)</label><input type="number" name="initial_price_override" class="form-control" placeholder="Leave blank to use base price" min="1" /></div>
+            <div class="form-grid-3">
+              <div class="form-group"><label class="form-label">Secondary Hex (Optional)</label><input type="text" name="initial_color_secondary_hex" class="form-control" placeholder="#D4A373" /></div>
+              <div class="form-group"><label class="form-label">Opening Stock</label><input type="number" name="initial_opening_stock" class="form-control" value="10" min="0" /></div>
+              <div class="form-group"><label class="form-label">Variant Price Override (₹)</label><input type="number" name="initial_price_override" class="form-control" placeholder="Blank = Base price" min="1" /></div>
             </div>
+          </div>
+
+          <div class="form-section-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div class="form-section-heading" style="margin-bottom:0;">4. Product Images (1 to 5 Photos)</div>
+              <span id="new-prod-images-count" style="font-size:12px;font-weight:700;color:var(--ink-secondary);">0 / 5 selected</span>
+            </div>
+            <div class="dropzone-box" id="new-prod-images-dropzone" tabindex="0" role="button" aria-label="Upload 1 to 5 frame photos">
+              <div style="font-weight:700;font-size:13px;">Drop 1 to 5 images here or click to browse</div>
+              <div style="font-size:12px;color:var(--ink-secondary);margin-top:4px;">JPEG, PNG, or WebP (max 5 MB each). Image #1 is Primary; Image #2 powers storefront hover swap.</div>
+              <input type="file" id="new-prod-images-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" />
+            </div>
+            <div id="new-prod-images-error" style="font-size:12px;color:#991b1b;margin-top:6px;"></div>
+            <div id="new-prod-images-preview" class="staged-images-grid"></div>
           </div>
         </div>
         <div class="admin-modal-footer">
@@ -1221,27 +1422,261 @@
     </div>
   </div>
 
-  <!-- Modal: Edit Lens Option Fee -->
+  <!-- Modal: Add / Edit Lens Option (Steps 1, 3, 4) -->
   <div id="modal-edit-lens-price" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="lens-price-modal-title" aria-hidden="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
-        <h3 class="admin-modal-title" id="lens-price-modal-title">Update Lens Option Fee</h3>
+        <h3 class="admin-modal-title" id="lens-price-modal-title">Edit Lens Option</h3>
         <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-edit-lens-price')" aria-label="Close">✕</button>
       </div>
       <form onsubmit="OptiiAdmin.handleSaveLensPrice(event)">
         <div class="admin-modal-body">
           <input type="hidden" id="lens-price-category" />
           <input type="hidden" id="lens-price-id" />
-          <input type="hidden" id="lens-price-name" />
-          <div style="font-weight:600;font-size:14px;margin-bottom:1rem;" id="lens-price-label">Lens Tier</div>
           <div class="form-group">
-            <label class="form-label" for="lens-price-input">Fee in INR (₹)</label>
-            <input type="number" id="lens-price-input" class="form-control" min="0" step="1" required />
+            <label class="form-label" for="lens-edit-name">Option Name *</label>
+            <input type="text" id="lens-edit-name" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lens-edit-desc">Description</label>
+            <textarea id="lens-edit-desc" class="form-control" style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-grid-2" id="lens-thickness-extra-fields" style="display:none;">
+            <div class="form-group">
+              <label class="form-label" for="lens-edit-index">Refractive Index</label>
+              <input type="number" id="lens-edit-index" class="form-control" step="0.01" min="1.45" max="1.90" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="lens-edit-sph-range">Recommended Power Range</label>
+              <input type="text" id="lens-edit-sph-range" class="form-control" placeholder="e.g. ±2.50 to ±4.50 D" />
+            </div>
+          </div>
+          <div class="form-grid-2" style="align-items:end;">
+            <div class="form-group">
+              <label class="form-label" for="lens-price-input">Fee / Surcharge in INR (₹) *</label>
+              <input type="number" id="lens-price-input" class="form-control" min="0" step="1" required />
+            </div>
+            <div class="form-group">
+              <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;padding-bottom:8px;">
+                <input type="checkbox" id="lens-edit-active" checked /> Active on Storefront
+              </label>
+            </div>
           </div>
         </div>
         <div class="admin-modal-footer">
           <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-edit-lens-price')">Cancel</button>
-          <button type="submit" class="btn-primary">Save Fee</button>
+          <button type="submit" class="btn-primary">Save Lens Option</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Step 2 Prescription Method & Clinical Bounds -->
+  <div id="modal-edit-rx-option" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rx-opt-modal-title" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="rx-opt-modal-title">Configure Step 2 — Prescription Rule</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-edit-rx-option')" aria-label="Close">✕</button>
+      </div>
+      <form onsubmit="OptiiAdmin.saveStep2Option(event)">
+        <div class="admin-modal-body">
+          <input type="hidden" id="rx-opt-id" />
+          <div class="form-group">
+            <label class="form-label" for="rx-opt-name">Method Title *</label>
+            <input type="text" id="rx-opt-name" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="rx-opt-desc">Customer Guidance</label>
+            <textarea id="rx-opt-desc" class="form-control" style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group"><label class="form-label" for="rx-opt-fee">Verification Fee (INR)</label><input type="number" id="rx-opt-fee" class="form-control" min="0" required /></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;">
+              <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding-bottom:8px;cursor:pointer;">
+                <input type="checkbox" id="rx-opt-active" checked /> Method Enabled
+              </label>
+            </div>
+          </div>
+          <div class="form-grid-3">
+            <div class="form-group"><label class="form-label" for="rx-opt-sph-min">SPH Min</label><input type="number" id="rx-opt-sph-min" class="form-control" step="0.25" /></div>
+            <div class="form-group"><label class="form-label" for="rx-opt-sph-max">SPH Max</label><input type="number" id="rx-opt-sph-max" class="form-control" step="0.25" /></div>
+            <div class="form-group"><label class="form-label" for="rx-opt-cyl-min">CYL Min</label><input type="number" id="rx-opt-cyl-min" class="form-control" step="0.25" /></div>
+          </div>
+          <div class="form-grid-3">
+            <div class="form-group"><label class="form-label" for="rx-opt-cyl-max">CYL Max</label><input type="number" id="rx-opt-cyl-max" class="form-control" step="0.25" /></div>
+            <div class="form-group"><label class="form-label" for="rx-opt-pd-min">PD Min (mm)</label><input type="number" id="rx-opt-pd-min" class="form-control" /></div>
+            <div class="form-group"><label class="form-label" for="rx-opt-pd-max">PD Max (mm)</label><input type="number" id="rx-opt-pd-max" class="form-control" /></div>
+          </div>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-edit-rx-option')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Step 2 Rule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Optical Brand -->
+  <div id="modal-tax-brand" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tax-brand-modal-title" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="tax-brand-modal-title">Optical Brand</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-tax-brand')" aria-label="Close">✕</button>
+      </div>
+      <form onsubmit="OptiiAdmin.saveBrandModal(event)">
+        <div class="admin-modal-body">
+          <input type="hidden" id="tax-brand-id" />
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="tax-brand-modal-name">Brand Name *</label>
+              <input type="text" id="tax-brand-modal-name" class="form-control" placeholder="e.g. Lindberg Optics" required oninput="if(!document.getElementById('tax-brand-id').value) document.getElementById('tax-brand-modal-slug').value = this.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)+/g,'')" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="tax-brand-modal-slug">URL Slug *</label>
+              <input type="text" id="tax-brand-modal-slug" class="form-control" placeholder="lindberg-optics" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="tax-brand-modal-desc">Brand Description</label>
+            <textarea id="tax-brand-modal-desc" class="form-control" style="min-height:60px;" placeholder="Minimalist Danish titanium eyewear…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="tax-brand-logo-file">Brand Logo (Optional · JPEG, PNG, WebP)</label>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+              <div class="store-logo-preview" id="tax-brand-logo-preview" style="width:96px;height:56px;"></div>
+              <div style="flex:1;">
+                <input type="file" id="tax-brand-logo-file" accept="image/jpeg,image/png,image/webp" class="form-control" style="padding:5px;" />
+                <button type="button" class="btn-danger btn-sm" id="btn-remove-brand-logo" onclick="OptiiAdmin.removeBrandLogo()" style="display:none;margin-top:6px;">Remove Existing Logo</button>
+              </div>
+            </div>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="tax-brand-modal-active" checked /> Active on Storefront
+          </label>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-tax-brand')">Cancel</button>
+          <button type="submit" class="btn-primary" id="btn-save-brand-modal">Save Brand</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Frame Shape -->
+  <div id="modal-tax-shape" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tax-shape-modal-title" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="tax-shape-modal-title">Frame Shape</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-tax-shape')" aria-label="Close">✕</button>
+      </div>
+      <form onsubmit="OptiiAdmin.saveShapeModal(event)">
+        <div class="admin-modal-body">
+          <input type="hidden" id="tax-shape-id" />
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="tax-shape-name">Shape Name *</label>
+              <input type="text" id="tax-shape-name" class="form-control" placeholder="e.g. Wayfarer" required oninput="if(!document.getElementById('tax-shape-id').value) document.getElementById('tax-shape-slug').value = this.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)+/g,'')" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="tax-shape-slug">URL Slug *</label>
+              <input type="text" id="tax-shape-slug" class="form-control" placeholder="wayfarer" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quick Silhouette Icon Preset</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('round')">Round</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('square')">Square</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('rectangle')">Rectangle</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('aviator')">Aviator</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('cat-eye')">Cat-Eye</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('oval')">Oval</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('wayfarer')">Wayfarer</button>
+              <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.selectShapePreset('geometric')">Geometric</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label class="form-label" for="tax-shape-svg" style="margin-bottom:0;">Inline SVG Icon Markup</label>
+              <span class="svg-preview-box" id="tax-shape-svg-preview"></span>
+            </div>
+            <textarea id="tax-shape-svg" class="form-control" style="min-height:70px;font-family:var(--font-mono);font-size:11px;" oninput="OptiiAdmin.updateShapeSvgPreview()"></textarea>
+          </div>
+          <div class="form-grid-2" style="align-items:center;">
+            <div class="form-group">
+              <label class="form-label" for="tax-shape-order">Display Order</label>
+              <input type="number" id="tax-shape-order" class="form-control" min="0" value="1" />
+            </div>
+            <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="tax-shape-active" checked /> Active on Storefront
+            </label>
+          </div>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-tax-shape')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Shape</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Product Category -->
+  <div id="modal-tax-category" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tax-cat-modal-title" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="tax-cat-modal-title">Product Category</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-tax-category')" aria-label="Close">✕</button>
+      </div>
+      <form onsubmit="OptiiAdmin.saveCategoryModal(event)">
+        <div class="admin-modal-body">
+          <input type="hidden" id="tax-cat-id" />
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="tax-cat-name">Category Name *</label>
+              <input type="text" id="tax-cat-name" class="form-control" placeholder="e.g. Computer Glasses" required oninput="if(!document.getElementById('tax-cat-id').value) document.getElementById('tax-cat-slug').value = this.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)+/g,'')" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="tax-cat-slug">URL Slug *</label>
+              <input type="text" id="tax-cat-slug" class="form-control" placeholder="computer-glasses" required />
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="tax-cat-type">Category Group *</label>
+              <select id="tax-cat-type" class="form-control" required>
+                <option value="glasses">Eyeglasses</option>
+                <option value="sunglasses">Sunglasses</option>
+                <option value="accessories">Accessories</option>
+                <option value="contact_lenses">Contact Lenses</option>
+                <option value="eyecare">Eye Care</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="tax-cat-gender">Target Gender</label>
+              <select id="tax-cat-gender" class="form-control">
+                <option value="unisex">Unisex</option>
+                <option value="men">Men</option>
+                <option value="women">Women</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="tax-cat-desc">Description (Optional)</label>
+            <textarea id="tax-cat-desc" class="form-control" style="min-height:55px;"></textarea>
+          </div>
+          <div class="form-grid-2" style="align-items:center;">
+            <div class="form-group">
+              <label class="form-label" for="tax-cat-order">Display Order</label>
+              <input type="number" id="tax-cat-order" class="form-control" min="0" value="1" />
+            </div>
+            <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="tax-cat-active" checked /> Active on Storefront
+            </label>
+          </div>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-tax-category')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Category</button>
         </div>
       </form>
     </div>

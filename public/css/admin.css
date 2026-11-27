@@ -306,6 +306,9 @@ body {
   padding: 1.5rem;
   max-width: 1440px;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .admin-section {
@@ -555,7 +558,8 @@ body {
 }
 
 .btn-danger:hover {
-  background-color: #fca5a5;
+  background-color: #fecaca;
+  color: #7f1d1d;
 }
 
 .btn-sm {
