@@ -737,12 +737,12 @@ const OptiiApp = {
               <div><strong>Patient:</strong> ${name} · +91 ${cleanPhone}</div>
               <div style="margin-top: 4px;"><strong>Date & Slot:</strong> ${date} at ${time} (30 mins)</div>
               <div style="margin-top: 4px;"><strong>Location:</strong> ${res.appointment.store_name}</div>
-              <div style="color: var(--color-ink-muted); font-size: 11px; margin-top: 2px;">${res.appointment.store_address}</div>
+              <div style="color: var(--color-ink-muted); font-size: 12px; margin-top: 2px;">${res.appointment.store_address}</div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <a href="${waUrl}" target="_blank" class="btn-pill-primary" style="background: #25D366; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; height: 42px; font-size: 13px; font-weight: 600;">
-                <span>💬</span> Save Booking Reminder on WhatsApp
+                Save Booking Reminder on WhatsApp
               </a>
               <button type="button" class="btn-pill-secondary" style="border: 1px solid var(--color-border); background: #fff; color: var(--color-ink); height: 40px; font-size: 13px; font-weight: 600; cursor: pointer;" onclick="OptiiApp.closeAppointmentModal()">
                 Done

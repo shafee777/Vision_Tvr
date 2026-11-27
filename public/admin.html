@@ -974,6 +974,32 @@
     </div>
   </div>
 
+  <!-- Modal: Edit Lens Option Fee -->
+  <div id="modal-edit-lens-price" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="lens-price-modal-title">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="lens-price-modal-title">Update Lens Option Fee</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-edit-lens-price')" aria-label="Close">✕</button>
+      </div>
+      <form onsubmit="OptiiAdmin.handleSaveLensPrice(event)">
+        <div class="admin-modal-body">
+          <input type="hidden" id="lens-price-category" />
+          <input type="hidden" id="lens-price-id" />
+          <input type="hidden" id="lens-price-name" />
+          <div style="font-weight:600;font-size:14px;margin-bottom:1rem;" id="lens-price-label">Lens Tier</div>
+          <div class="form-group">
+            <label class="form-label" for="lens-price-input">Fee in INR (₹)</label>
+            <input type="number" id="lens-price-input" class="form-control" min="0" step="1" required />
+          </div>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-edit-lens-price')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Fee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Controller Script -->
   <script src="/js/admin.js"></script>
 </body>

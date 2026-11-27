@@ -734,28 +734,47 @@ const OptiiAdmin = {
   },
 
   editLensPrice(category, id, name, currentPrice) {
-    const newPrice = prompt(`Update pricing for [${name}] in INR (₹):`, currentPrice);
-    if (newPrice === null || isNaN(Number(newPrice)) || Number(newPrice) < 0) return;
+    document.getElementById('lens-price-category').value = category;
+    document.getElementById('lens-price-id').value = id;
+    document.getElementById('lens-price-name').value = name;
+    document.getElementById('lens-price-label').textContent = name;
+    document.getElementById('lens-price-input').value = currentPrice;
+    this.openModal('modal-edit-lens-price');
+  },
+
+  async handleSaveLensPrice(e) {
+    e.preventDefault();
+    const category = document.getElementById('lens-price-category').value;
+    const id = Number(document.getElementById('lens-price-id').value);
+    const name = document.getElementById('lens-price-name').value;
+    const newPrice = Number(document.getElementById('lens-price-input').value);
+
+    if (isNaN(newPrice) || newPrice < 0) {
+      this.toast('Please enter a valid non-negative INR amount.', 'error');
+      return;
+    }
 
     let endpoint = '';
     let payload = {};
     if (category === 'usage') {
       endpoint = `/lenses/usages/${id}`;
-      payload = { base_price_inr: Number(newPrice) };
+      payload = { base_price_inr: newPrice };
     } else if (category === 'thickness') {
       endpoint = `/lenses/thicknesses/${id}`;
-      payload = { price_inr: Number(newPrice) };
+      payload = { price_inr: newPrice };
     } else if (category === 'coating') {
       endpoint = `/lenses/coatings/${id}`;
-      payload = { price_inr: Number(newPrice) };
+      payload = { price_inr: newPrice };
     }
 
-    this.request(endpoint, { method: 'PUT', body: payload })
-      .then(() => {
-        this.toast(`Updated ${name} price to ₹${Number(newPrice).toLocaleString('en-IN')}`, 'success');
-        this.loadLenses();
-      })
-      .catch(err => this.toast(err.message || 'Error updating price.', 'error'));
+    try {
+      await this.request(endpoint, { method: 'PUT', body: payload });
+      this.toast(`Updated ${name} price to ₹${newPrice.toLocaleString('en-IN')}`, 'success');
+      this.closeModal('modal-edit-lens-price');
+      this.loadLenses();
+    } catch (err) {
+      this.toast(err.message || 'Error updating price.', 'error');
+    }
   },
 
   // ═════════════════════════════════════════════════════════════════════
@@ -925,8 +944,8 @@ const OptiiAdmin = {
                 <strong>${it.product_name}</strong> (${it.color_name || 'Standard'}) × ${it.quantity || 1}
                 <span>₹${Number(it.total_price_inr || it.price_inr || 0).toLocaleString('en-IN')}</span>
               </div>
-              <div style="font-size:11px;color:var(--ink-secondary);margin-top:2px;">
-                ${it.configured_lenses ? `👁️ ${it.configured_lenses.usage_name} · ${it.configured_lenses.thickness_name} · ${it.configured_lenses.coating_name}` : 'Frame Only'}
+              <div style="font-size:12px;color:var(--ink-secondary);margin-top:2px;">
+                ${it.configured_lenses ? `${it.configured_lenses.usage_name} · ${it.configured_lenses.thickness_name} · ${it.configured_lenses.coating_name}` : 'Frame Only'}
               </div>
               ${it.prescription_token ? `
                 <div style="font-size:11px;background:#ecfdf5;color:#065f46;display:inline-block;padding:2px 6px;border-radius:3px;margin-top:4px;">

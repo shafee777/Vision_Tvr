@@ -212,7 +212,7 @@ const OptiiCart = {
                 
                 ${lenses.usage_name ? `
                   <div class="cart-item-lens-pill">
-                    👁️ ${lenses.usage_name} · ${lenses.thickness_name || 'Standard'}
+                    ${lenses.usage_name} · ${lenses.thickness_name || 'Standard'}
                     ${hasPrescription ? `<span class="cart-item-rx-badge">Rx Attached</span>` : `<span class="cart-item-rx-badge later">Rx Later</span>`}
                   </div>
                 ` : ''}
@@ -272,7 +272,7 @@ const OptiiCart = {
             <span style="color: #166534; font-weight: 500;">COMPLIMENTARY</span>
           </div>
 
-          <div style="display: flex; justify-content: space-between; color: var(--color-ink-muted); font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; color: var(--color-ink-muted); font-size: 12px;">
             <span>GST (18% Optical Goods)</span>
             <span>Included</span>
           </div>
@@ -291,7 +291,7 @@ const OptiiCart = {
           </button>
 
           <button type="button" class="btn-pill-secondary" style="width: 100%; height: 40px; font-size: 12px; font-weight: 600; border: 1px solid var(--color-border); background: #fff; color: var(--color-ink); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="OptiiCart.orderViaWhatsApp()">
-            <span>💬</span> Order Entire Bag via WhatsApp
+            Order Entire Bag via WhatsApp
           </button>
         </div>
       `;
@@ -680,7 +680,7 @@ const OptiiCart = {
           <div style="display: flex; flex-direction: column; gap: 8px;">
             ${order.whatsapp_url ? `
               <a href="${order.whatsapp_url}" target="_blank" class="btn-pill-primary" style="background: #25D366; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; font-size: 13px; font-weight: 600;">
-                <span>💬</span> Confirm Order on WhatsApp & Submit Rx
+                Confirm Order on WhatsApp & Submit Rx
               </a>
             ` : ''}
 
