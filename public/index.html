@@ -166,7 +166,7 @@
       </button>
 
       <button class="btn-book-test-header" id="btn-book-test-header">
-        <span>📅 Book Eye Test</span>
+        <span>Book Eye Test</span>
       </button>
     </div>
   </header>
@@ -207,6 +207,19 @@
           <a class="drawer-sublink" href="#men-sunglasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.state.filters.gender='men'; OptiiApp.loadProducts();">Men's Sunglasses</a>
           <a class="drawer-sublink" href="#women-sunglasses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.state.filters.gender='women'; OptiiApp.loadProducts();">Women's Sunglasses</a>
           <a class="drawer-sublink" href="#polarized" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='sunglasses'; OptiiApp.loadProducts();">Polarized Sunglasses</a>
+        </div>
+      </div>
+
+      <!-- Accessories & Contact Lenses -->
+      <div class="drawer-accordion">
+        <button class="drawer-accordion-header" onclick="OptiiApp.toggleDrawerAccordion(this)">
+          <span>Accessories & Contact Lenses</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="drawer-accordion-body">
+          <a class="drawer-sublink" href="#accessories" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='accessories'; OptiiApp.loadProducts();">Accessories</a>
+          <a class="drawer-sublink" href="#contact-lenses" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='contact_lenses'; OptiiApp.loadProducts();">Contact Lenses</a>
+          <a class="drawer-sublink" href="#eyecare" onclick="OptiiApp.toggleNavDrawer(false); OptiiApp.state.category='eyecare'; OptiiApp.loadProducts();">Eye Care</a>
         </div>
       </div>
 
@@ -377,7 +390,7 @@
         <p style="color: var(--color-ink-secondary); font-size: 15px; max-width: 580px;">Book an appointment with our senior optometrist at our flagship clinic in Thiruvarur. 30-minute comprehensive digital refractions, corneal assessment and custom lens fitting.</p>
       </div>
       <button class="btn-pill-primary" style="background-color: var(--color-ink); color: #ffffff;" onclick="OptiiApp.openAppointmentModal()">
-        📅 Reserve Appointment Slot
+        Reserve Appointment Slot
       </button>
     </div>
   </section>
@@ -515,7 +528,7 @@
               Add to Optical Bag
             </button>
             <button class="btn-pill-secondary" style="border-color: var(--color-border); color: var(--color-ink); width: 100%; text-align: center; gap: 8px;" onclick="OptiiApp.inquireOnWhatsApp()">
-              💬 Inquire & Order via WhatsApp
+              Inquire & Order via WhatsApp
             </button>
           </div>
         </div>
