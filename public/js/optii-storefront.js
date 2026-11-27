@@ -29,15 +29,22 @@ const OptiiApp = {
 
   // 1. Initialization
   async init() {
-    console.log('[Optii Storefront] Initializing client application...');
+    this.hydrateStateFromUrl();
     this.bindEvents();
     this.updateBadges();
+
+    window.addEventListener('popstate', () => {
+      this.hydrateStateFromUrl();
+      this.renderShapesShowcase();
+      this.renderFilterShapes();
+      this.loadProducts({ skipUrlSync: true });
+    });
 
     try {
       await Promise.all([
         this.loadShapes(),
         this.loadCategories(),
-        this.loadProducts()
+        this.loadProducts({ skipUrlSync: true })
       ]);
 
       if (window.location.hash === '#book') {
@@ -45,6 +52,39 @@ const OptiiApp = {
       }
     } catch (err) {
       console.error('[Optii Init Error]:', err);
+    }
+  },
+
+  hydrateStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    this.state.category = params.get('category') || 'all';
+    this.state.filters = {
+      shape: params.get('shape') || '',
+      gender: params.get('gender') || '',
+      fit: params.get('fit') || '',
+      material: params.get('material') || '',
+      color: params.get('color') || '',
+      min_price: params.get('min_price') || '',
+      max_price: params.get('max_price') || '',
+      sort: params.get('sort') || 'default',
+      search: params.get('search') || ''
+    };
+  },
+
+  syncUrlState() {
+    const params = new URLSearchParams();
+    if (this.state.category && this.state.category !== 'all') {
+      params.set('category', this.state.category);
+    }
+    Object.entries(this.state.filters).forEach(([k, v]) => {
+      if (v !== '' && v !== null && v !== undefined && !(k === 'sort' && v === 'default')) {
+        params.set(k, v);
+      }
+    });
+    const qs = params.toString();
+    const nextUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`;
+    if (nextUrl !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.pushState(null, '', nextUrl);
     }
   },
 
@@ -196,7 +236,10 @@ const OptiiApp = {
     }
   },
 
-  async loadProducts() {
+  async loadProducts(options = {}) {
+    if (!options.skipUrlSync) {
+      this.syncUrlState();
+    }
     const container = document.getElementById('product-grid-container');
     const countLabel = document.getElementById('plp-items-count');
     if (container) container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--color-ink-muted);">Loading optical collection…</div>`;
