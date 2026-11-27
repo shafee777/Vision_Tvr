@@ -83,7 +83,7 @@ body {
 }
 
 .login-logo span {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
   color: var(--ink-secondary);
@@ -108,7 +108,7 @@ body {
 .role-tab-btn {
   flex: 1;
   padding: 6px 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -172,7 +172,7 @@ body {
 }
 
 .nav-section-title {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -236,7 +236,7 @@ body {
 }
 
 .user-role-pill {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -370,7 +370,7 @@ body {
 }
 
 .metric-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-secondary);
   margin-top: 4px;
 }
@@ -381,6 +381,7 @@ body {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   overflow: hidden;
+  padding: 12px;
   margin-bottom: 1.5rem;
 }
 
@@ -437,7 +438,7 @@ body {
   background-color: var(--bg-subtle);
   padding: 10px 14px;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ink-secondary);
@@ -460,7 +461,7 @@ body {
   display: inline-block;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -560,7 +561,7 @@ body {
 .btn-sm {
   height: 28px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Form Groups */
@@ -572,7 +573,7 @@ body {
 }
 
 .form-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;

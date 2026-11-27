@@ -355,6 +355,7 @@
 .pdp-accordion-group {
   border-top: 1px solid var(--color-border);
   margin-top: 1rem;
+  padding-top: 8px;
 }
 
 .pdp-accordion-item {
