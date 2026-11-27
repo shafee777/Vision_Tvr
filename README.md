@@ -38,4 +38,7 @@ Full-stack optical retail platform for handcrafted eyeglasses, sunglasses, custo
 
 ```bash
 node scripts/test_optii_api.js
+node scripts/test_admin_restructure.js
 ```
+
+See [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) for the Optii Admin Operations, CSV Catalogue Import, and Bulk Stock Count workflows.

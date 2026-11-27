@@ -10,6 +10,9 @@ const { passwordLimiter } = require('../middleware/rateLimiter');
 const { verifyFileSignature } = require('../utils/fileSignature');
 const { validateBody } = require('../middleware/validate');
 const { productCreateSchema, stockAdjustSchema, passwordChangeSchema, clinicSettingsSchema } = require('../validators/schemas');
+const { getDashboardAnalytics } = require('../services/dashboardService');
+const { buildCsvContent } = require('../utils/csvValidation');
+const adminImportsRoutes = require('./adminImports.routes');
 
 // Multer Storage Configuration for Product Images
 const uploadDir = path.join(__dirname, '../../public/images/products');
@@ -57,6 +60,20 @@ async function logAudit(req, action, entity, entityId, details) {
 
 // All admin routes require a verified JWT token
 router.use(authenticateToken);
+
+// Mount Bulk Import Routes (/api/admin/imports/*)
+router.use('/imports', adminImportsRoutes);
+
+// GET /api/admin/dashboard/analytics - Real SQLite analytics, trend charts, and attention queues
+router.get('/dashboard/analytics', async (req, res) => {
+  try {
+    const analytics = await getDashboardAnalytics(req.query.days);
+    res.json({ success: true, analytics });
+  } catch (err) {
+    console.error('Dashboard Analytics Error:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
 
 // ═════════════════════════════════════════════════════════════════════
 // 1. DASHBOARD OVERVIEW & OPERATIONAL KPIS
@@ -239,35 +256,70 @@ router.delete('/users/:id', requireRole('admin'), async (req, res) => {
 // 3. PRODUCT & VARIANT CATALOG MANAGEMENT
 // ═════════════════════════════════════════════════════════════════════
 
-// GET /api/admin/products - List all products with variant counts and inventory
+// GET /api/admin/products - List products with filters, sorting, pagination & thumbnails
 router.get('/products', async (req, res) => {
   try {
-    const { search, category, brand, shape } = req.query;
-    let conditions = [];
-    let params = [];
+    const { search, category, brand, shape, status = 'all', sort = 'newest', limit = 50, offset = 0 } = req.query;
+    const conditions = [];
+    const params = [];
 
     if (search && search.trim()) {
-      conditions.push('(p.name LIKE ? OR p.sku LIKE ? OR p.description LIKE ?)');
-      params.push(`%${search.trim()}%`, `%${search.trim()}%`, `%${search.trim()}%`);
+      const term = `%${search.trim()}%`;
+      conditions.push('(p.name LIKE ? OR p.sku LIKE ? OR p.description LIKE ? OR EXISTS (SELECT 1 FROM product_variants v2 WHERE v2.product_id = p.id AND v2.sku LIKE ?))');
+      params.push(term, term, term, term);
     }
     if (category) {
-      conditions.push('c.slug = ?');
-      params.push(category);
+      conditions.push('(c.slug = ? OR c.id = ?)');
+      params.push(category, Number(category) || 0);
     }
     if (brand) {
-      conditions.push('b.slug = ?');
-      params.push(brand);
+      conditions.push('(b.slug = ? OR b.id = ?)');
+      params.push(brand, Number(brand) || 0);
     }
     if (shape) {
-      conditions.push('s.slug = ?');
-      params.push(shape);
+      conditions.push('(s.slug = ? OR s.id = ?)');
+      params.push(shape, Number(shape) || 0);
+    }
+    if (status === 'active') {
+      conditions.push('p.is_active = 1');
+    } else if (status === 'archived') {
+      conditions.push('p.is_active = 0');
     }
 
+    let orderBy = 'p.id DESC';
+    if (sort === 'name_asc') orderBy = 'p.name ASC';
+    else if (sort === 'price_asc') orderBy = 'p.base_price_inr ASC';
+    else if (sort === 'price_desc') orderBy = 'p.base_price_inr DESC';
+    else if (sort === 'stock_asc') orderBy = 'total_stock ASC, p.id DESC';
+
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const countRow = await db.get(
+      `SELECT COUNT(DISTINCT p.id) AS total
+       FROM products p
+       LEFT JOIN brands b ON b.id = p.brand_id
+       LEFT JOIN categories c ON c.id = p.category_id
+       LEFT JOIN frame_shapes s ON s.id = p.shape_id
+       ${whereClause}`,
+      params
+    );
+
+    const parsedLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const parsedOffset = Math.max(Number(offset) || 0, 0);
+
     const sql = `
-      SELECT p.*, b.name as brand_name, c.name as category_name, s.name as shape_name,
+      SELECT p.*, b.name as brand_name, b.slug as brand_slug,
+             c.name as category_name, c.slug as category_slug,
+             s.name as shape_name, s.slug as shape_slug,
              COUNT(DISTINCT v.id) as variant_count,
-             COALESCE(SUM(v.stock_quantity), 0) as total_stock
+             COALESCE(SUM(v.stock_quantity), 0) as total_stock,
+             (
+               SELECT pi.image_url
+               FROM product_images pi
+               JOIN product_variants pv ON pv.id = pi.variant_id
+               WHERE pv.product_id = p.id
+               ORDER BY pv.is_default DESC, pi.display_order ASC, pi.id ASC
+               LIMIT 1
+             ) as primary_image
       FROM products p
       LEFT JOIN brands b ON b.id = p.brand_id
       LEFT JOIN categories c ON c.id = p.category_id
@@ -275,10 +327,18 @@ router.get('/products', async (req, res) => {
       LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_active = 1
       ${whereClause}
       GROUP BY p.id
-      ORDER BY p.id DESC
+      ORDER BY ${orderBy}
+      LIMIT ? OFFSET ?
     `;
-    const products = await db.all(sql, params);
-    res.json({ success: true, count: products.length, products });
+    const products = await db.all(sql, [...params, parsedLimit, parsedOffset]);
+    res.json({
+      success: true,
+      total: countRow ? countRow.total : products.length,
+      count: products.length,
+      limit: parsedLimit,
+      offset: parsedOffset,
+      products
+    });
   } catch (err) {
     console.error('List Admin Products Error:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -325,18 +385,16 @@ router.get('/products/:id', async (req, res) => {
   }
 });
 
-// POST /api/admin/products - Create New Master Frame Silhouette (Admin Only with Runtime Schema Validation)
+// POST /api/admin/products - Create New Master Frame Silhouette (and optional initial variant)
 router.post('/products', requireRole('admin'), validateBody(productCreateSchema), async (req, res) => {
   try {
     const {
       brand_id, shape_id, category_id, name, slug, sku, description,
       base_price_inr, gender = 'unisex', material, frame_fit,
-      lens_width_mm, bridge_width_mm, temple_length_mm
+      lens_width_mm, bridge_width_mm, temple_length_mm,
+      frame_height_mm = null, total_width_mm = null,
+      initial_variant = null
     } = req.body;
-
-    if (!brand_id || !shape_id || !category_id || !name || !slug || !sku || !base_price_inr || !material || !frame_fit || !lens_width_mm || !bridge_width_mm || !temple_length_mm) {
-      return res.status(400).json({ success: false, message: 'All master frame specifications and millimeter measurements are required.' });
-    }
 
     // Uniqueness validation
     const existing = await db.get('SELECT id FROM products WHERE slug = ? OR sku = ?', [slug.trim(), sku.trim()]);
@@ -344,22 +402,77 @@ router.post('/products', requireRole('admin'), validateBody(productCreateSchema)
       return res.status(409).json({ success: false, message: 'Product slug or master SKU already exists.' });
     }
 
-    const result = await db.run(
-      `INSERT INTO products (
-         brand_id, shape_id, category_id, name, slug, sku, description,
-         base_price_inr, gender, material, frame_fit, lens_width_mm, bridge_width_mm, temple_length_mm
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        brand_id, shape_id, category_id, name.trim(), slug.trim(), sku.trim(), description || null,
-        Number(base_price_inr), gender, material.trim(), frame_fit.trim(),
-        Number(lens_width_mm), Number(bridge_width_mm), Number(temple_length_mm)
-      ]
-    );
+    if (initial_variant) {
+      const existingVar = await db.get('SELECT id FROM product_variants WHERE sku = ?', [initial_variant.sku.trim()]);
+      if (existingVar) {
+        return res.status(409).json({ success: false, message: `Variant SKU '${initial_variant.sku}' already exists.` });
+      }
+    }
 
-    const newId = result.lastID;
-    await logAudit(req, 'CREATE_PRODUCT', 'products', newId, { name, sku, slug, base_price_inr });
+    let newId = null;
+    let newVariantId = null;
 
-    res.status(201).json({ success: true, message: 'Master frame created successfully.', product_id: newId, productId: newId });
+    await db.transaction(async () => {
+      const result = await db.run(
+        `INSERT INTO products (
+           brand_id, shape_id, category_id, name, slug, sku, description,
+           base_price_inr, gender, material, frame_fit,
+           lens_width_mm, bridge_width_mm, temple_length_mm,
+           frame_height_mm, total_width_mm
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          brand_id, shape_id, category_id, name.trim(), slug.trim(), sku.trim(), description || null,
+          Number(base_price_inr), gender, material.trim(), frame_fit.trim(),
+          Number(lens_width_mm), Number(bridge_width_mm), Number(temple_length_mm),
+          frame_height_mm ? Number(frame_height_mm) : null, total_width_mm ? Number(total_width_mm) : null
+        ]
+      );
+      newId = result.lastID;
+
+      if (initial_variant) {
+        const openingStock = Number(initial_variant.stock_quantity || 0);
+        const varRes = await db.run(
+          `INSERT INTO product_variants (
+             product_id, color_name, color_hex, color_secondary_hex, sku,
+             price_override_inr, stock_quantity, is_default, is_active
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1)`,
+          [
+            newId,
+            initial_variant.color_name.trim(),
+            initial_variant.color_hex.trim(),
+            initial_variant.color_secondary_hex ? initial_variant.color_secondary_hex.trim() : null,
+            initial_variant.sku.trim(),
+            initial_variant.price_override_inr ? Number(initial_variant.price_override_inr) : null,
+            openingStock
+          ]
+        );
+        newVariantId = varRes.lastID;
+
+        if (openingStock > 0) {
+          await db.run(
+            `INSERT INTO inventory_movements (
+               variant_id, product_id, user_id, username,
+               change_quantity, previous_quantity, new_quantity,
+               movement_type, reason
+             ) VALUES (?, ?, ?, ?, ?, 0, ?, 'replenishment', ?)`,
+            [
+              newVariantId, newId, req.user ? req.user.id : null, req.user ? req.user.username : 'Admin',
+              openingStock, openingStock, `Opening stock on frame creation (${initial_variant.sku.trim()})`
+            ]
+          );
+        }
+      }
+    });
+
+    await logAudit(req, 'CREATE_PRODUCT', 'products', newId, { name, sku, slug, base_price_inr, initial_variant_sku: initial_variant?.sku || null });
+
+    res.status(201).json({
+      success: true,
+      message: initial_variant ? 'Master frame and initial colorway created successfully.' : 'Master frame created successfully.',
+      product_id: newId,
+      productId: newId,
+      variant_id: newVariantId
+    });
   } catch (err) {
     console.error('Create Product Error:', err);
     res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
@@ -511,10 +624,9 @@ router.put('/variants/:variantId', requireRole('admin'), async (req, res) => {
          color_hex = COALESCE(?, color_hex),
          color_secondary_hex = COALESCE(?, color_secondary_hex),
          sku = COALESCE(?, sku),
-         price_override_inr = COALESCE(?, price_override_inr),
+         price_override_inr = ?,
          is_default = COALESCE(?, is_default),
-         is_active = COALESCE(?, is_active),
-         updated_at = CURRENT_TIMESTAMP
+         is_active = COALESCE(?, is_active)
        WHERE id = ?`,
       [
         color_name, color_hex, color_secondary_hex, sku,
@@ -599,16 +711,17 @@ router.delete('/images/:imageId', requireRole('admin'), async (req, res) => {
 // 5. INVENTORY MANAGEMENT & MOVEMENTS HISTORY
 // ═════════════════════════════════════════════════════════════════════
 
-// GET /api/admin/inventory - Comprehensive Inventory Grid
+// GET /api/admin/inventory - Comprehensive Inventory Grid with Summary & Last Movement
 router.get('/inventory', async (req, res) => {
   try {
-    const { search, brand_id, category_id, stock_status } = req.query;
-    let conditions = ['v.is_active = 1', 'p.is_active = 1'];
-    let params = [];
+    const { search, brand_id, category_id, stock_status, sort = 'stock_asc', limit = 100, offset = 0 } = req.query;
+    const conditions = ['v.is_active = 1', 'p.is_active = 1'];
+    const params = [];
 
     if (search && search.trim()) {
-      conditions.push('(v.sku LIKE ? OR v.color_name LIKE ? OR p.name LIKE ?)');
-      params.push(`%${search.trim()}%`, `%${search.trim()}%`, `%${search.trim()}%`);
+      conditions.push('(v.sku LIKE ? OR v.color_name LIKE ? OR p.name LIKE ? OR p.sku LIKE ?)');
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term, term);
     }
     if (brand_id) {
       conditions.push('p.brand_id = ?');
@@ -626,22 +739,125 @@ router.get('/inventory', async (req, res) => {
       conditions.push('v.stock_quantity > 5');
     }
 
-    const sql = `
-      SELECT v.id as variant_id, v.sku, v.color_name, v.color_hex, v.stock_quantity,
-             v.price_override_inr, p.id as product_id, p.name as product_name,
-             p.base_price_inr, b.name as brand_name, c.name as category_name
-      FROM product_variants v
-      JOIN products p ON p.id = v.product_id
-      JOIN brands b ON b.id = p.brand_id
-      JOIN categories c ON c.id = p.category_id
-      WHERE ${conditions.join(' AND ')}
-      ORDER BY v.stock_quantity ASC, p.name ASC
-    `;
-    const inventory = await db.all(sql, params);
-    res.json({ success: true, count: inventory.length, inventory });
+    let orderBy = 'v.stock_quantity ASC, p.name ASC';
+    if (sort === 'stock_desc') orderBy = 'v.stock_quantity DESC, p.name ASC';
+    else if (sort === 'sku_asc') orderBy = 'v.sku ASC';
+    else if (sort === 'name_asc') orderBy = 'p.name ASC, v.sku ASC';
+
+    const whereClause = conditions.join(' AND ');
+    const parsedLimit = Math.min(Math.max(Number(limit) || 100, 1), 500);
+    const parsedOffset = Math.max(Number(offset) || 0, 0);
+
+    const [summaryRow, filteredCountRow, inventory] = await Promise.all([
+      db.get(`
+        SELECT COUNT(*) AS total_variants,
+               COALESCE(SUM(v.stock_quantity), 0) AS total_units,
+               SUM(CASE WHEN v.stock_quantity > 5 THEN 1 ELSE 0 END) AS healthy_variants,
+               SUM(CASE WHEN v.stock_quantity > 0 AND v.stock_quantity <= 5 THEN 1 ELSE 0 END) AS low_stock_variants,
+               SUM(CASE WHEN v.stock_quantity = 0 THEN 1 ELSE 0 END) AS out_of_stock_variants
+        FROM product_variants v
+        JOIN products p ON p.id = v.product_id
+        WHERE v.is_active = 1 AND p.is_active = 1
+      `),
+      db.get(
+        `SELECT COUNT(*) AS total
+         FROM product_variants v
+         JOIN products p ON p.id = v.product_id
+         WHERE ${whereClause}`,
+        params
+      ),
+      db.all(
+        `SELECT v.id as variant_id, v.sku, v.color_name, v.color_hex, v.stock_quantity,
+                v.price_override_inr, p.id as product_id, p.name as product_name, p.sku as master_sku,
+                p.base_price_inr, COALESCE(v.price_override_inr, p.base_price_inr) as effective_price_inr,
+                b.name as brand_name, c.name as category_name,
+                (SELECT m.change_quantity FROM inventory_movements m WHERE m.variant_id = v.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) as last_change_quantity,
+                (SELECT m.movement_type FROM inventory_movements m WHERE m.variant_id = v.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) as last_movement_type,
+                (SELECT m.created_at FROM inventory_movements m WHERE m.variant_id = v.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) as last_movement_at
+         FROM product_variants v
+         JOIN products p ON p.id = v.product_id
+         JOIN brands b ON b.id = p.brand_id
+         JOIN categories c ON c.id = p.category_id
+         WHERE ${whereClause}
+         ORDER BY ${orderBy}
+         LIMIT ? OFFSET ?`,
+        [...params, parsedLimit, parsedOffset]
+      )
+    ]);
+
+    res.json({
+      success: true,
+      total: filteredCountRow ? filteredCountRow.total : inventory.length,
+      count: inventory.length,
+      limit: parsedLimit,
+      offset: parsedOffset,
+      summary: {
+        total_variants: Number(summaryRow?.total_variants || 0),
+        total_units: Number(summaryRow?.total_units || 0),
+        healthy_variants: Number(summaryRow?.healthy_variants || 0),
+        low_stock_variants: Number(summaryRow?.low_stock_variants || 0),
+        out_of_stock_variants: Number(summaryRow?.out_of_stock_variants || 0)
+      },
+      inventory
+    });
   } catch (err) {
     console.error('Inventory Error:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// GET /api/admin/inventory/export - Download current filtered inventory as CSV
+router.get('/inventory/export', requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const { search, brand_id, category_id, stock_status } = req.query;
+    const conditions = ['v.is_active = 1', 'p.is_active = 1'];
+    const params = [];
+
+    if (search && search.trim()) {
+      conditions.push('(v.sku LIKE ? OR v.color_name LIKE ? OR p.name LIKE ?)');
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term);
+    }
+    if (brand_id) {
+      conditions.push('p.brand_id = ?');
+      params.push(Number(brand_id));
+    }
+    if (category_id) {
+      conditions.push('p.category_id = ?');
+      params.push(Number(category_id));
+    }
+    if (stock_status === 'low') conditions.push('v.stock_quantity > 0 AND v.stock_quantity <= 5');
+    else if (stock_status === 'out') conditions.push('v.stock_quantity = 0');
+    else if (stock_status === 'in') conditions.push('v.stock_quantity > 5');
+
+    const rows = await db.all(
+      `SELECT v.sku AS variant_sku, p.sku AS master_sku, p.name AS product_name,
+              b.name AS brand_name, c.name AS category_name, v.color_name,
+              COALESCE(v.price_override_inr, p.base_price_inr) AS retail_price_inr,
+              v.stock_quantity,
+              CASE WHEN v.stock_quantity = 0 THEN 'Out of Stock'
+                   WHEN v.stock_quantity <= 5 THEN 'Low Stock'
+                   ELSE 'Healthy' END AS stock_status
+       FROM product_variants v
+       JOIN products p ON p.id = v.product_id
+       JOIN brands b ON b.id = p.brand_id
+       JOIN categories c ON c.id = p.category_id
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY p.name ASC, v.sku ASC`,
+      params
+    );
+
+    const csv = buildCsvContent(
+      ['variant_sku', 'master_sku', 'product_name', 'brand_name', 'category_name', 'color_name', 'retail_price_inr', 'stock_quantity', 'stock_status'],
+      rows.map(r => [r.variant_sku, r.master_sku, r.product_name, r.brand_name, r.category_name, r.color_name, r.retail_price_inr, r.stock_quantity, r.stock_status])
+    );
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="optii_inventory_export.csv"');
+    res.send(csv);
+  } catch (err) {
+    console.error('Inventory Export Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to export inventory.' });
   }
 });
 
@@ -727,6 +943,9 @@ router.post('/inventory/adjust', validateBody(stockAdjustSchema), async (req, re
 
     res.json(resultPayload);
   } catch (err) {
+    if (err.status && err.status < 500) {
+      return res.status(err.status).json({ success: false, message: err.message });
+    }
     console.error('Inventory Adjustment Error:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
@@ -847,12 +1066,13 @@ router.get('/shapes', async (req, res) => {
 
 router.post('/shapes', requireRole('admin'), async (req, res) => {
   try {
-    const { name, slug, svg_icon_path, description, display_order = 0 } = req.body;
+    const { name, slug, icon_svg, svg_icon_path, display_order = 0 } = req.body;
     if (!name || !slug) return res.status(400).json({ success: false, message: 'Name and slug are required.' });
+    const svgContent = icon_svg || svg_icon_path || '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="14" cy="12" r="8"/><circle cx="34" cy="12" r="8"/><line x1="22" y1="12" x2="26" y2="12"/></svg>';
 
     const result = await db.run(
-      'INSERT INTO frame_shapes (name, slug, svg_icon_path, description, display_order) VALUES (?, ?, ?, ?, ?)',
-      [name.trim(), slug.trim(), svg_icon_path || null, description || null, Number(display_order)]
+      'INSERT INTO frame_shapes (name, slug, icon_svg, display_order) VALUES (?, ?, ?, ?)',
+      [name.trim(), slug.trim(), svgContent, Number(display_order)]
     );
     await logAudit(req, 'CREATE_SHAPE', 'frame_shapes', result.lastID, { name, slug });
     res.status(201).json({ success: true, message: 'Frame shape created successfully.', shape_id: result.lastID });
@@ -864,10 +1084,11 @@ router.post('/shapes', requireRole('admin'), async (req, res) => {
 router.put('/shapes/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, slug, svg_icon_path, description, display_order } = req.body;
+    const { name, slug, icon_svg, svg_icon_path, display_order } = req.body;
+    const svgContent = icon_svg !== undefined ? icon_svg : svg_icon_path;
     await db.run(
-      'UPDATE frame_shapes SET name = COALESCE(?, name), slug = COALESCE(?, slug), svg_icon_path = COALESCE(?, svg_icon_path), description = COALESCE(?, description), display_order = COALESCE(?, display_order) WHERE id = ?',
-      [name, slug, svg_icon_path, description, display_order !== undefined ? Number(display_order) : null, id]
+      'UPDATE frame_shapes SET name = COALESCE(?, name), slug = COALESCE(?, slug), icon_svg = COALESCE(?, icon_svg), display_order = COALESCE(?, display_order) WHERE id = ?',
+      [name, slug, svgContent !== undefined ? svgContent : null, display_order !== undefined ? Number(display_order) : null, id]
     );
     await logAudit(req, 'UPDATE_SHAPE', 'frame_shapes', id, { name, slug });
     res.json({ success: true, message: 'Frame shape updated successfully.' });
@@ -983,17 +1204,18 @@ router.put('/lenses/usages/:id', requireRole('admin', 'optometrist'), async (req
 router.put('/lenses/thicknesses/:id', requireRole('admin', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, price_inr, description, recommendation_sph, is_active } = req.body;
+    const { name, price_inr, description, recommended_sph_range, recommendation_sph, is_active } = req.body;
+    const sphGuidance = recommended_sph_range !== undefined ? recommended_sph_range : recommendation_sph;
 
     await db.run(
       `UPDATE lens_thicknesses SET
          name = COALESCE(?, name),
          price_inr = COALESCE(?, price_inr),
          description = COALESCE(?, description),
-         recommendation_sph = COALESCE(?, recommendation_sph),
+         recommended_sph_range = COALESCE(?, recommended_sph_range),
          is_active = COALESCE(?, is_active)
        WHERE id = ?`,
-      [name, price_inr !== undefined ? Number(price_inr) : null, description, recommendation_sph, is_active !== undefined ? Number(is_active) : null, id]
+      [name, price_inr !== undefined ? Number(price_inr) : null, description, sphGuidance, is_active !== undefined ? Number(is_active) : null, id]
     );
 
     await logAudit(req, 'UPDATE_LENS_THICKNESS', 'lens_thicknesses', id, { name, price_inr, is_active });
@@ -1304,10 +1526,15 @@ router.patch('/orders/:orderNumber/payment', async (req, res) => {
 // GET /api/admin/appointments - List Appointments with Filters
 router.get('/appointments', async (req, res) => {
   try {
-    const { date, status, store_id } = req.query;
-    let conditions = [];
-    let params = [];
+    const { date, status, store_id, scope } = req.query;
+    const conditions = [];
+    const params = [];
 
+    if (scope === 'today') {
+      conditions.push("a.appointment_date = DATE('now')");
+    } else if (scope === 'upcoming') {
+      conditions.push("a.appointment_date >= DATE('now') AND a.status != 'cancelled'");
+    }
     if (date) {
       conditions.push('a.appointment_date = ?');
       params.push(date);

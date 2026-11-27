@@ -4,14 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow, noarchive" />
-  <title>Optii Atelier — Professional Optical Retail Administration</title>
-  
+  <title>Optii Atelier — Optical Retail Administration</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2'><circle cx='6' cy='12' r='4'/><circle cx='18' cy='12' r='4'/><line x1='10' y1='12' x2='14' y2='12'/></svg>" />
   <link rel="stylesheet" href="/css/admin.css" />
+  <link rel="stylesheet" href="/css/admin-components.css" />
 </head>
 <body>
 
@@ -22,10 +23,9 @@
         <div class="login-logo">
           Optii <span>ATELIER OPERATIONS</span>
         </div>
-        <p class="login-sub">Dedicated Optical Retail & Clinical Management</p>
+        <p class="login-sub">Dedicated Optical Retail &amp; Clinical Management</p>
       </div>
 
-      <!-- Quick Role Selector -->
       <div class="role-switcher-row" id="role-switcher-row">
         <button type="button" class="role-tab-btn active" id="role-tab-admin" onclick="OptiiAdmin.fillRoleCreds('admin')">Admin</button>
         <button type="button" class="role-tab-btn" id="role-tab-optometrist" onclick="OptiiAdmin.fillRoleCreds('optometrist')">Optometrist</button>
@@ -52,102 +52,91 @@
   <div id="main-screen">
     <div class="admin-layout">
 
-      <!-- DESKTOP & MOBILE DRAWER SIDEBAR -->
-      <aside class="admin-sidebar" id="admin-sidebar">
+      <!-- SIDEBAR (4 LOGICAL RETAIL GROUPS) -->
+      <aside class="admin-sidebar" id="admin-sidebar" aria-label="Primary Admin Navigation">
         <div class="sidebar-header">
           <div class="login-logo" style="font-size:18px;">
             Optii <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;color:var(--ink-muted);">Atelier</span>
           </div>
-          <button type="button" class="topbar-mobile-trigger" onclick="OptiiAdmin.toggleMobileSidebar()" aria-label="Close Sidebar" style="padding:4px;">
+          <button type="button" class="topbar-mobile-trigger" onclick="OptiiAdmin.toggleMobileSidebar(false)" aria-label="Close Sidebar" style="padding:4px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
         <nav class="sidebar-nav">
-          <div class="nav-section-title">Core Operations</div>
-          
+          <div class="nav-section-title">Overview</div>
           <button type="button" class="sidebar-item active" data-sec="dashboard" onclick="OptiiAdmin.switchSection('dashboard')">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            Dashboard
+            Overview
           </button>
 
+          <div class="nav-section-title">Catalog</div>
           <button type="button" class="sidebar-item" data-sec="products" onclick="OptiiAdmin.switchSection('products')">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="6" cy="12" r="4"/><circle cx="18" cy="12" r="4"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-            Frame Silhouettes
+            Frames &amp; Variants
           </button>
-
           <button type="button" class="sidebar-item" data-sec="inventory" onclick="OptiiAdmin.switchSection('inventory')">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-            Stock & Inventory
+            Inventory
           </button>
-
           <button type="button" class="sidebar-item" data-sec="lenses" data-role-guard="admin,optometrist" onclick="OptiiAdmin.switchSection('lenses')">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/></svg>
-            4-Step Lens Config
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            Lens Pricing
           </button>
-
-          <div class="nav-section-title">Care & Fulfillment</div>
-
-          <button type="button" class="sidebar-item" data-sec="appointments" data-role-guard="admin,optometrist" onclick="OptiiAdmin.switchSection('appointments')">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Eye Test Queue
-          </button>
-
-          <button type="button" class="sidebar-item" data-sec="orders" onclick="OptiiAdmin.switchSection('orders')">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-            Orders & Lab Glazing
-          </button>
-
-          <button type="button" class="sidebar-item" data-sec="enquiries" onclick="OptiiAdmin.switchSection('enquiries')">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-            WhatsApp Inquiries
-          </button>
-
-          <div class="nav-section-title">System & Governance</div>
-
           <button type="button" class="sidebar-item" data-sec="taxonomy" onclick="OptiiAdmin.switchSection('taxonomy')">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3L8 21"/><path d="M16 3l-2 18"/></svg>
-            Taxonomy & Shapes
+            Brands &amp; Shapes
           </button>
 
-          <button type="button" class="sidebar-item" data-sec="audit" data-role-guard="admin" onclick="OptiiAdmin.switchSection('audit')">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Audit Trail
+          <div class="nav-section-title">Operations</div>
+          <button type="button" class="sidebar-item" data-sec="orders" onclick="OptiiAdmin.switchSection('orders')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Orders &amp; Lab
+          </button>
+          <button type="button" class="sidebar-item" data-sec="appointments" data-role-guard="admin,optometrist" onclick="OptiiAdmin.switchSection('appointments')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Appointments
+          </button>
+          <button type="button" class="sidebar-item" data-sec="enquiries" onclick="OptiiAdmin.switchSection('enquiries')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            Customer Enquiries
           </button>
 
+          <div class="nav-section-title" data-role-guard="admin">Administration</div>
           <button type="button" class="sidebar-item" data-sec="users" data-role-guard="admin" onclick="OptiiAdmin.switchSection('users')">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            Staff Accounts
+            Team &amp; Roles
           </button>
-
+          <button type="button" class="sidebar-item" data-sec="audit" data-role-guard="admin" onclick="OptiiAdmin.switchSection('audit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Activity Log
+          </button>
           <button type="button" class="sidebar-item" data-sec="settings" data-role-guard="admin" onclick="OptiiAdmin.switchSection('settings')">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            Clinic Settings
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Store Settings
           </button>
         </nav>
 
         <div class="sidebar-footer">
           <div class="user-profile-badge">
-            <span class="user-name" id="user-profile-name">Admin</span>
-            <span class="user-role-pill" id="user-profile-role">ADMIN</span>
+            <span class="user-name" id="user-profile-name">Staff</span>
+            <span class="user-role-pill" id="user-profile-role">STAFF</span>
           </div>
           <button type="button" class="btn-secondary btn-sm" style="width:100%;" onclick="OptiiAdmin.logout()">Sign Out</button>
         </div>
       </aside>
 
-      <!-- MAIN WRAPPER -->
+      <!-- MAIN WORKSPACE -->
       <div class="admin-main-wrap">
-        
-        <!-- TOPBAR -->
         <header class="admin-topbar">
           <div class="topbar-title-wrap">
-            <button type="button" class="topbar-mobile-trigger" onclick="OptiiAdmin.toggleMobileSidebar()" aria-label="Open Navigation">
+            <button type="button" class="topbar-mobile-trigger" onclick="OptiiAdmin.toggleMobileSidebar(true)" aria-label="Open Navigation">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
-            <h1 class="topbar-title" id="topbar-active-title">Operations Dashboard Overview</h1>
+            <h1 class="topbar-title" id="topbar-active-title">Overview &amp; Store Health</h1>
           </div>
           <div class="topbar-actions">
-            <a href="/" target="_blank" class="btn-secondary btn-sm" style="gap:4px;">
+            <a href="/" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm" style="gap:4px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               View Storefront
             </a>
@@ -155,519 +144,817 @@
           </div>
         </header>
 
-        <!-- CONTENT AREA -->
         <main class="admin-content">
 
-          <!-- ═════════ 1. SECTION: DASHBOARD ═════════ -->
+          <!-- ═════════ SECTION 1: OVERVIEW DASHBOARD ═════════ -->
           <section id="sec-dashboard" class="admin-section active">
-            <div class="section-header-bar">
+            <div class="welcome-banner">
               <div>
-                <h2 class="section-h2">Live Operations Overview</h2>
-                <p class="section-desc">Real-time inventory levels, consultation pipeline and lab order fulfillment status.</p>
+                <h2 class="welcome-title" id="dashboard-welcome-title">Welcome back</h2>
+                <div class="welcome-meta" id="dashboard-welcome-date">Loading store date &amp; status…</div>
+              </div>
+              <div class="quick-actions-bar">
+                <button type="button" class="btn-primary btn-sm" data-role-guard="admin" onclick="OptiiAdmin.switchSection('products'); OptiiAdmin.openNewProductModal();">+ Add Frame</button>
+                <button type="button" class="btn-secondary btn-sm" data-role-guard="admin" onclick="OptiiAdmin.switchSection('products'); OptiiAdmin.switchCatalogSubtab('import');">Import Frames</button>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.switchSection('inventory')">Adjust Stock</button>
+                <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.switchSection('orders')">View Orders</button>
+                <button type="button" class="btn-secondary btn-sm" data-role-guard="admin,optometrist" onclick="OptiiAdmin.switchSection('appointments')">View Appointments</button>
               </div>
             </div>
 
-            <!-- KPI Metric Cards Grid -->
-            <div class="metrics-grid">
-              <div class="metric-card">
-                <div class="metric-label">Active Silhouettes</div>
+            <!-- 8 Clickable KPI Cards -->
+            <div class="metrics-grid-4">
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.switchSection('products')">
+                <div class="metric-label">Active Frames</div>
                 <div class="metric-value" id="metric-products">0</div>
-                <div class="metric-sub">Master frames in catalog</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Total Colorways</div>
+                <div class="metric-sub">Master silhouettes listed</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.switchSection('inventory')">
+                <div class="metric-label">Active Variants</div>
                 <div class="metric-value" id="metric-variants">0</div>
-                <div class="metric-sub">Variants in stock & display</div>
-              </div>
-              <div class="metric-card">
+                <div class="metric-sub">Unique colour SKUs</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.updateInventoryFilter('stock_status', 'low'); OptiiAdmin.switchSection('inventory');">
                 <div class="metric-label">Low Stock (≤5)</div>
                 <div class="metric-value" id="metric-low-stock" style="color:var(--status-amber);">0</div>
-                <div class="metric-sub">Immediate replenishment required</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Depleted Stock</div>
+                <div class="metric-sub">Variants needing restock</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.updateInventoryFilter('stock_status', 'out'); OptiiAdmin.switchSection('inventory');">
+                <div class="metric-label">Out of Stock</div>
                 <div class="metric-value" id="metric-out-stock" style="color:var(--status-red);">0</div>
-                <div class="metric-sub">Out-of-stock colorways</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Today's Eye Tests</div>
+                <div class="metric-sub">Unavailable SKUs</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.switchSection('orders')">
+                <div class="metric-label">Pending Orders</div>
+                <div class="metric-value" id="metric-pending-orders">0</div>
+                <div class="metric-sub" id="metric-orders-sub">Placed, processing &amp; lab glazing</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.switchSection('appointments')">
+                <div class="metric-label">Today's Appointments</div>
                 <div class="metric-value" id="metric-appts-today">0</div>
-                <div class="metric-sub">Consultations scheduled today</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Pending Bookings</div>
-                <div class="metric-value" id="metric-appts-pending">0</div>
-                <div class="metric-sub">Awaiting clinical confirmation</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Total Orders Placed</div>
-                <div class="metric-value" id="metric-orders">0</div>
-                <div class="metric-sub"><span id="metric-real-orders-count">0</span> Live · <span id="metric-sim-orders-count">0</span> Sandbox</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Net Real Revenue (Live)</div>
-                <div class="metric-value" id="metric-real-revenue" style="color:var(--status-green);">₹0</div>
-                <div class="metric-sub">Verified real money received</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Sandbox Test Volume</div>
-                <div class="metric-value" id="metric-sim-revenue" style="color:var(--ink-secondary);">₹0</div>
-                <div class="metric-sub" style="color:var(--status-amber);">Simulated — No live funds</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">WhatsApp Inquiries</div>
+                <div class="metric-sub">Scheduled eye consultations</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.switchSection('enquiries')">
+                <div class="metric-label">New Enquiries</div>
                 <div class="metric-value" id="metric-enquiries">0</div>
-                <div class="metric-sub">Active pre-order conversations</div>
+                <div class="metric-sub">Awaiting WhatsApp reply</div>
+              </button>
+              <button type="button" class="metric-card is-clickable" onclick="OptiiAdmin.switchSection('orders')">
+                <div class="metric-label">Real Revenue</div>
+                <div class="metric-value" id="metric-real-revenue" style="color:var(--status-green);">₹0</div>
+                <div class="metric-sub">Excludes simulated sandbox orders</div>
+              </button>
+            </div>
+
+            <!-- Analytics Visualizations Row -->
+            <div class="analytics-grid">
+              <div class="panel-card">
+                <div class="panel-header">
+                  <div>
+                    <div class="panel-title">Sales &amp; Order Activity</div>
+                    <div class="panel-subtitle">Real verified transactions in INR (excludes simulated payments)</div>
+                  </div>
+                  <div class="range-pill-group" role="group" aria-label="Sales chart date range">
+                    <button type="button" class="range-pill-btn" data-analytics-days="7" onclick="OptiiAdmin.loadDashboardMetrics(7)">7D</button>
+                    <button type="button" class="range-pill-btn active" data-analytics-days="30" onclick="OptiiAdmin.loadDashboardMetrics(30)">30D</button>
+                    <button type="button" class="range-pill-btn" data-analytics-days="90" onclick="OptiiAdmin.loadDashboardMetrics(90)">90D</button>
+                  </div>
+                </div>
+                <div class="chart-surface" id="dashboard-sales-chart">
+                  <div class="empty-state-box">Loading sales analytics…</div>
+                </div>
+                <div class="chart-summary-strip" id="dashboard-sales-summary"></div>
+              </div>
+
+              <div class="panel-card">
+                <div class="panel-header">
+                  <div>
+                    <div class="panel-title">Inventory Health Distribution</div>
+                    <div class="panel-subtitle">Low-stock threshold set to ≤ 5 units per SKU</div>
+                  </div>
+                </div>
+                <div id="dashboard-inventory-health">
+                  <div class="empty-state-box">Loading stock health…</div>
+                </div>
               </div>
             </div>
 
-            <!-- Recent Activity Dual Panels -->
-            <div class="form-grid-2">
+            <!-- Needs Attention Panels -->
+            <div class="form-grid-2" style="margin-bottom:1.25rem;">
               <div class="card-table-wrap">
                 <div class="table-filter-bar">
-                  <strong>Recent Administrative Audit Trail</strong>
+                  <strong>Needs Attention — Low &amp; Out-of-Stock SKUs</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.updateInventoryFilter('stock_status', 'low'); OptiiAdmin.switchSection('inventory');">Open Inventory</button>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Variant SKU</th>
+                      <th>Frame</th>
+                      <th>Colour</th>
+                      <th>Stock</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-attention-stock-body">
+                    <tr><td colspan="5" class="empty-state-box">Loading stock alerts…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="card-table-wrap">
+                <div class="table-filter-bar">
+                  <strong>Needs Attention — Pending Lab &amp; Courier Orders</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.switchSection('orders')">All Orders</button>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Order #</th>
+                      <th>Customer</th>
+                      <th>Stage</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-attention-orders-body">
+                    <tr><td colspan="4" class="empty-state-box">Loading pending orders…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Today's Appointments & Recent Movements -->
+            <div class="form-grid-2">
+              <div class="card-table-wrap" data-role-guard="admin,optometrist">
+                <div class="table-filter-bar">
+                  <strong>Today's Appointments</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.switchSection('appointments')">Manage Queue</button>
                 </div>
                 <table class="admin-table">
                   <thead>
                     <tr>
                       <th>Time</th>
-                      <th>Staff</th>
+                      <th>Customer</th>
+                      <th>Ref #</th>
+                      <th>Status</th>
                       <th>Action</th>
-                      <th>Target Entity</th>
                     </tr>
                   </thead>
-                  <tbody id="dashboard-activity-table">
-                    <tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--ink-muted);">Loading activity…</td></tr>
+                  <tbody id="dashboard-today-appts-body">
+                    <tr><td colspan="5" class="empty-state-box">Loading today's appointments…</td></tr>
                   </tbody>
                 </table>
               </div>
 
               <div class="card-table-wrap">
                 <div class="table-filter-bar">
-                  <strong>Latest Inventory Movements</strong>
+                  <strong>Recent Stock Movements</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.switchSection('inventory'); OptiiAdmin.switchInventorySubtab('movements');">Full History</button>
                 </div>
                 <table class="admin-table">
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th>Product</th>
-                      <th>Delta</th>
+                      <th>Frame &amp; SKU</th>
+                      <th>Qty</th>
+                      <th>Change</th>
                       <th>Type</th>
-                      <th>Reason</th>
+                      <th>Staff &amp; Reason</th>
                     </tr>
                   </thead>
                   <tbody id="dashboard-movements-table">
-                    <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--ink-muted);">Loading movements…</td></tr>
+                    <tr><td colspan="6" class="empty-state-box">Loading stock movements…</td></tr>
                   </tbody>
                 </table>
               </div>
             </div>
           </section>
 
-          <!-- ═════════ 2. SECTION: PRODUCTS CATALOG ═════════ -->
+          <!-- ═════════ SECTION 2: FRAMES & VARIANTS ═════════ -->
           <section id="sec-products" class="admin-section">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Optical Frame Silhouettes</h2>
-                <p class="section-desc">Manage frame geometry, millimeter dimensions, material craft, and color variants.</p>
+                <h2 class="section-h2">Frames &amp; Variants Catalogue</h2>
+                <p class="section-desc">Manage master frame specifications, colourways, photography, and bulk spreadsheet imports.</p>
               </div>
-              <button type="button" class="btn-primary" onclick="OptiiAdmin.openNewProductModal()">
-                + Add Frame Silhouette
-              </button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;" data-role-guard="admin">
+                <button type="button" class="btn-secondary" onclick="OptiiAdmin.switchCatalogSubtab('import')">Import CSV / Paste Rows</button>
+                <button type="button" class="btn-primary" onclick="OptiiAdmin.openNewProductModal()">+ Add Single Frame</button>
+              </div>
             </div>
 
-            <div class="card-table-wrap">
-              <div class="table-filter-bar">
-                <div class="table-filter-group">
-                  <input type="text" id="products-search-input" class="admin-search-input" placeholder="Search by name, SKU, brand…" oninput="OptiiAdmin.loadProducts()" />
+            <div class="subtabs-bar">
+              <button type="button" class="subtab-btn active" data-catalog-tab="catalog" onclick="OptiiAdmin.switchCatalogSubtab('catalog')">Catalogue Listing</button>
+              <button type="button" class="subtab-btn" data-catalog-tab="import" data-role-guard="admin" onclick="OptiiAdmin.switchCatalogSubtab('import')">Bulk Frame Import</button>
+              <button type="button" class="subtab-btn" data-catalog-tab="history" data-role-guard="admin" onclick="OptiiAdmin.switchCatalogSubtab('history'); OptiiAdmin.loadCatalogueImportHistory();">Import History</button>
+            </div>
+
+            <!-- Sub-view A: Catalogue Table -->
+            <div data-catalog-pane="catalog" style="display:block;">
+              <div class="card-table-wrap">
+                <div class="table-filter-bar">
+                  <div class="table-filter-group">
+                    <input type="text" id="products-search-input" class="admin-search-input" placeholder="Search frame name or SKU…" oninput="OptiiAdmin.debouncedProductSearch(this.value)" />
+                    <select id="products-filter-brand" class="admin-select" onchange="OptiiAdmin.updateProductFilter('brand', this.value)" aria-label="Filter by brand"></select>
+                    <select id="products-filter-category" class="admin-select" onchange="OptiiAdmin.updateProductFilter('category', this.value)" aria-label="Filter by category"></select>
+                    <select id="products-filter-shape" class="admin-select" onchange="OptiiAdmin.updateProductFilter('shape', this.value)" aria-label="Filter by shape"></select>
+                    <select id="products-filter-status" class="admin-select" onchange="OptiiAdmin.updateProductFilter('status', this.value)" aria-label="Filter by status">
+                      <option value="all">All Statuses</option>
+                      <option value="active">Active Only</option>
+                      <option value="archived">Archived Only</option>
+                    </select>
+                    <select id="products-sort" class="admin-select" onchange="OptiiAdmin.updateProductFilter('sort', this.value)" aria-label="Sort frames">
+                      <option value="newest">Newest First</option>
+                      <option value="name_asc">Name (A–Z)</option>
+                      <option value="price_asc">Price (Low to High)</option>
+                      <option value="price_desc">Price (High to Low)</option>
+                      <option value="stock_asc">Lowest Stock First</option>
+                    </select>
+                  </div>
+                  <span id="products-results-count" style="font-size:13px;font-weight:600;color:var(--ink-secondary);">0 frame(s)</span>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Frame</th>
+                      <th>Master SKU</th>
+                      <th>Brand</th>
+                      <th>Category</th>
+                      <th>Shape</th>
+                      <th>Dimensions</th>
+                      <th>Variants</th>
+                      <th>Total Stock</th>
+                      <th>Base Price</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="products-table-body">
+                    <tr><td colspan="11" class="empty-state-box">Loading frames catalogue…</td></tr>
+                  </tbody>
+                </table>
+                <div class="pagination-bar" id="products-pagination-bar"></div>
+              </div>
+            </div>
+
+            <!-- Sub-view B: 4-Step Bulk Frame Import Wizard -->
+            <div data-catalog-pane="import" style="display:none;">
+              <div class="wizard-steps-bar">
+                <div class="wizard-step-pill active" data-cat-step-pill="1">1. Upload or Paste</div>
+                <div class="wizard-step-pill" data-cat-step-pill="2">2. Map Columns</div>
+                <div class="wizard-step-pill" data-cat-step-pill="3">3. Preview &amp; Validate</div>
+                <div class="wizard-step-pill" data-cat-step-pill="4">4. Confirm &amp; Result</div>
+              </div>
+
+              <!-- Step 1 -->
+              <div data-cat-step-pane="1" style="display:block;">
+                <div class="panel-card" style="margin-bottom:1rem;">
+                  <div class="panel-header">
+                    <div>
+                      <div class="panel-title">Prepare Your Spreadsheet</div>
+                      <div class="panel-subtitle">One row per colour variant. Rows sharing the same Master SKU automatically group under one frame.</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(false)">Download Blank Template (CSV)</button>
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(true)">Download Sample File (CSV)</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="import-methods-grid">
+                  <div class="panel-card">
+                    <div class="panel-title">Option A — Upload CSV File</div>
+                    <div class="dropzone-box" id="cat-import-dropzone" tabindex="0" role="button" aria-label="Upload CSV spreadsheet">
+                      <div style="font-weight:700;font-size:14px;">Drop your CSV file here or click to browse</div>
+                      <div style="font-size:12px;color:var(--ink-secondary);margin-top:4px;">Supports UTF-8 CSV exported from Excel or Google Sheets (max 2 MB, 2,000 rows).</div>
+                      <input type="file" id="cat-import-file-input" accept=".csv,text/csv" style="display:none;" />
+                    </div>
+                  </div>
+
+                  <div class="panel-card">
+                    <div class="panel-title">Option B — Paste Rows from Excel / Google Sheets</div>
+                    <textarea id="cat-import-paste-input" class="paste-textarea" placeholder="Copy header + rows directly from Excel or Google Sheets and paste here (tab-separated or comma-separated)…"></textarea>
+                    <div>
+                      <button type="button" class="btn-primary" onclick="OptiiAdmin.parsePastedCatalogueRows()">Read Pasted Rows</button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Silhouette</th>
-                    <th>Brand</th>
-                    <th>Shape</th>
-                    <th>Geometry (Lens-Bridge-Temple)</th>
-                    <th>Base Price</th>
-                    <th>Total Stock</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="products-table-body">
-                  <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading optical catalog…</td></tr>
-                </tbody>
-              </table>
+
+              <!-- Step 2 -->
+              <div data-cat-step-pane="2" style="display:none;">
+                <div class="panel-card">
+                  <div class="panel-header">
+                    <div>
+                      <div class="panel-title">Verify Column Mapping</div>
+                      <div class="panel-subtitle">Known headings are mapped automatically. Map any custom headings before validation.</div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                      <button type="button" class="btn-secondary" onclick="OptiiAdmin.setCatalogueStep(1)">Back</button>
+                      <button type="button" class="btn-primary" onclick="OptiiAdmin.applyMappingAndValidate()">Preview &amp; Validate</button>
+                    </div>
+                  </div>
+                  <div class="mapping-grid" id="cat-mapping-grid"></div>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div data-cat-step-pane="3" style="display:none;">
+                <div class="panel-card">
+                  <div class="panel-header">
+                    <div>
+                      <div class="panel-title">Spreadsheet Preview &amp; Inline Correction</div>
+                      <div class="panel-subtitle">Edit any cell directly, add/remove rows, and re-validate before committing.</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <input type="text" class="admin-search-input" placeholder="Search preview rows…" oninput="OptiiAdmin.filterCataloguePreview(this.value)" />
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.addBlankCatalogueRow()">+ Add Row</button>
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.validateCatalogueImport()">Validate Rows</button>
+                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.setCatalogueStep(2)">Column Mapping</button>
+                      <button type="button" class="btn-primary btn-sm" id="btn-cat-proceed-confirm" onclick="OptiiAdmin.setCatalogueStep(4)" disabled>Continue to Confirm</button>
+                    </div>
+                  </div>
+
+                  <div class="validation-summary-strip" id="cat-preview-summary"></div>
+                  <div id="cat-preview-errors"></div>
+                  <div id="cat-preview-grid"></div>
+                </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div data-cat-step-pane="4" style="display:none;">
+                <div class="panel-card" id="cat-confirm-summary-box"></div>
+              </div>
+            </div>
+
+            <!-- Sub-view C: Catalogue Import History -->
+            <div data-catalog-pane="history" style="display:none;">
+              <div class="card-table-wrap">
+                <div class="table-filter-bar">
+                  <strong>Catalogue Import Batches</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.loadCatalogueImportHistory()">Refresh</button>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Batch ID</th>
+                      <th>Source</th>
+                      <th>Date</th>
+                      <th>Staff</th>
+                      <th>Rows</th>
+                      <th>Created</th>
+                      <th>Failed</th>
+                      <th>Status</th>
+                      <th>Report</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cat-import-history-body">
+                    <tr><td colspan="9" class="empty-state-box">Loading import history…</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
 
-          <!-- ═════════ 3. SECTION: STOCK & INVENTORY ═════════ -->
+          <!-- ═════════ SECTION 3: INVENTORY MANAGEMENT ═════════ -->
           <section id="sec-inventory" class="admin-section">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Atelier Stock & Inventory Control</h2>
-                <p class="section-desc">Precise stock adjustments with mandatory operational audit logging and movement trails.</p>
+                <h2 class="section-h2">Inventory &amp; Stock Control</h2>
+                <p class="section-desc">Variant SKU stock quantities, spreadsheet stock counts with stale protection, and audit movements.</p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn-secondary" onclick="OptiiAdmin.exportFilteredInventoryCsv()">Export Inventory CSV</button>
+                <button type="button" class="btn-secondary" onclick="OptiiAdmin.downloadStockCountSheet()">Download Stock Count Sheet</button>
+                <button type="button" class="btn-primary" onclick="OptiiAdmin.switchInventorySubtab('bulk')">Bulk Stock Upload</button>
               </div>
             </div>
 
-            <div class="card-table-wrap">
-              <div class="table-filter-bar">
-                <div class="table-filter-group">
-                  <input type="text" id="inv-search-input" class="admin-search-input" placeholder="Search variant SKU or product…" oninput="OptiiAdmin.loadInventory()" />
-                  <select id="inv-filter-status" class="admin-select" onchange="OptiiAdmin.loadInventory()">
-                    <option value="all">All Inventory Statuses</option>
-                    <option value="low">Low Stock Only (≤ 5 units)</option>
-                    <option value="out">Depleted (0 units)</option>
-                    <option value="in">Healthy Stock (> 5 units)</option>
-                  </select>
+            <div class="subtabs-bar">
+              <button type="button" class="subtab-btn active" data-inv-tab="stock" onclick="OptiiAdmin.switchInventorySubtab('stock')">Variant Stock</button>
+              <button type="button" class="subtab-btn" data-inv-tab="bulk" onclick="OptiiAdmin.switchInventorySubtab('bulk')">Bulk Stock Count</button>
+              <button type="button" class="subtab-btn" data-inv-tab="movements" onclick="OptiiAdmin.switchInventorySubtab('movements')">Movement History</button>
+              <button type="button" class="subtab-btn" data-inv-tab="history" onclick="OptiiAdmin.switchInventorySubtab('history'); OptiiAdmin.loadStockImportHistory();">Import History</button>
+            </div>
+
+            <!-- Inventory Sub-view 1: Variant Stock Table -->
+            <div data-inv-pane="stock" style="display:block;">
+              <div class="metrics-grid-5">
+                <div class="metric-card"><div class="metric-label">Active Variants</div><div class="metric-value" id="inv-kpi-total-variants">0</div></div>
+                <div class="metric-card"><div class="metric-label">Healthy (&gt;5)</div><div class="metric-value" id="inv-kpi-healthy" style="color:var(--status-green);">0</div></div>
+                <div class="metric-card"><div class="metric-label">Low Stock (≤5)</div><div class="metric-value" id="inv-kpi-low" style="color:var(--status-amber);">0</div></div>
+                <div class="metric-card"><div class="metric-label">Out of Stock</div><div class="metric-value" id="inv-kpi-out" style="color:var(--status-red);">0</div></div>
+                <div class="metric-card"><div class="metric-label">Total Units</div><div class="metric-value" id="inv-kpi-total-units">0</div></div>
+              </div>
+
+              <div id="inv-health-bar" style="margin-bottom:1rem;"></div>
+
+              <div class="card-table-wrap">
+                <div class="table-filter-bar">
+                  <div class="table-filter-group">
+                    <input type="text" id="inv-search-input" class="admin-search-input" placeholder="Search variant SKU, colour, or frame…" oninput="OptiiAdmin.debouncedInventorySearch(this.value)" />
+                    <select id="inv-filter-brand" class="admin-select" onchange="OptiiAdmin.updateInventoryFilter('brand_id', this.value)" aria-label="Filter inventory by brand"></select>
+                    <select id="inv-filter-category" class="admin-select" onchange="OptiiAdmin.updateInventoryFilter('category_id', this.value)" aria-label="Filter inventory by category"></select>
+                    <select id="inv-filter-status" class="admin-select" onchange="OptiiAdmin.updateInventoryFilter('stock_status', this.value)" aria-label="Filter inventory by stock status">
+                      <option value="all">All Stock Levels</option>
+                      <option value="low">Low Stock (1–5)</option>
+                      <option value="out">Out of Stock (0)</option>
+                      <option value="in">Healthy (&gt; 5)</option>
+                    </select>
+                    <select id="inv-sort" class="admin-select" onchange="OptiiAdmin.updateInventoryFilter('sort', this.value)" aria-label="Sort inventory">
+                      <option value="stock_asc">Lowest Stock First</option>
+                      <option value="stock_desc">Highest Stock First</option>
+                      <option value="sku_asc">SKU (A–Z)</option>
+                      <option value="name_asc">Frame Name (A–Z)</option>
+                    </select>
+                  </div>
+                  <div class="quick-pill-bar">
+                    <button type="button" class="filter-chip-btn active" data-inv-quick="all" onclick="OptiiAdmin.updateInventoryFilter('stock_status', 'all')">All</button>
+                    <button type="button" class="filter-chip-btn" data-inv-quick="low" onclick="OptiiAdmin.updateInventoryFilter('stock_status', 'low')">Low Stock</button>
+                    <button type="button" class="filter-chip-btn" data-inv-quick="out" onclick="OptiiAdmin.updateInventoryFilter('stock_status', 'out')">Out of Stock</button>
+                  </div>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Variant SKU</th>
+                      <th>Frame</th>
+                      <th>Brand</th>
+                      <th>Colour</th>
+                      <th>Retail Price</th>
+                      <th>Current Stock</th>
+                      <th>Stock Status</th>
+                      <th>Last Movement</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventory-table-body">
+                    <tr><td colspan="9" class="empty-state-box">Loading inventory…</td></tr>
+                  </tbody>
+                </table>
+                <div class="pagination-bar" id="inv-pagination-bar"></div>
+              </div>
+            </div>
+
+            <!-- Inventory Sub-view 2: Bulk Stock Count Upload -->
+            <div data-inv-pane="bulk" style="display:none;">
+              <div class="panel-card" style="margin-bottom:1rem;">
+                <div class="panel-header">
+                  <div>
+                    <div class="panel-title">Excel / CSV Physical Stock Count Workflow</div>
+                    <div class="panel-subtitle">Expected quantities are populated from SQLite. Any concurrent stock change blocks overwrite automatically.</div>
+                  </div>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadStockCountSheet()">Download Current Stock Count Sheet</button>
                 </div>
               </div>
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Variant SKU</th>
-                    <th>Silhouette</th>
-                    <th>Colorway</th>
-                    <th>Category & Brand</th>
-                    <th>Units in Stock</th>
-                    <th>Inventory Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="inventory-table-body">
-                  <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading inventory counts…</td></tr>
-                </tbody>
-              </table>
+
+              <div class="import-methods-grid" style="margin-bottom:1rem;">
+                <div class="panel-card">
+                  <div class="panel-title">Upload Counted Stock CSV</div>
+                  <div class="dropzone-box" id="stk-import-dropzone" tabindex="0" role="button" aria-label="Upload stock count CSV">
+                    <div style="font-weight:700;font-size:14px;">Drop counted stock CSV here or click to browse</div>
+                    <div style="font-size:12px;color:var(--ink-secondary);margin-top:4px;">Required columns: variant_sku, expected_current_quantity, counted_quantity, reason</div>
+                    <input type="file" id="stk-import-file-input" accept=".csv,text/csv" style="display:none;" />
+                  </div>
+                </div>
+
+                <div class="panel-card">
+                  <div class="panel-title">Paste Rows from Excel / Google Sheets</div>
+                  <textarea id="stk-import-paste-input" class="paste-textarea" placeholder="Paste stock count rows including headers (tab or comma separated)…"></textarea>
+                  <div>
+                    <button type="button" class="btn-primary" onclick="OptiiAdmin.parsePastedStockRows()">Preview &amp; Validate Stock Count</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="stk-commit-result-banner" style="display:none;margin-bottom:1rem;"></div>
+
+              <div class="panel-card" id="stk-preview-workspace" style="display:none;">
+                <div class="panel-header">
+                  <div>
+                    <div class="panel-title">Stock Count Verification &amp; Difference Preview</div>
+                    <div class="panel-subtitle">All-or-nothing commit: if any row has a stale conflict or validation error, zero rows are modified.</div>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.addBlankStockCountRow()">+ Add Row</button>
+                    <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.validateStockCountImport()">Validate Stock Sheet</button>
+                    <button type="button" class="btn-primary btn-sm" id="btn-commit-stock-import" onclick="OptiiAdmin.commitStockCountImport()" disabled>Commit Stock Count Batch</button>
+                  </div>
+                </div>
+
+                <div class="validation-summary-strip" id="stk-preview-summary"></div>
+                <div id="stk-preview-errors"></div>
+                <div id="stk-editable-grid" style="margin-bottom:1rem;"></div>
+
+                <div class="card-table-wrap">
+                  <div class="table-filter-bar"><strong>Stock Difference Preview</strong></div>
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>SKU</th>
+                        <th>Previous Stock</th>
+                        <th>Counted Stock</th>
+                        <th>Difference</th>
+                        <th>Result</th>
+                      </tr>
+                    </thead>
+                    <tbody id="stk-diff-preview-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inventory Sub-view 3: Stock Movement History -->
+            <div data-inv-pane="movements" style="display:none;">
+              <div class="card-table-wrap">
+                <div class="table-filter-bar">
+                  <strong id="movements-filter-badge">Showing latest 100 inventory movements</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.switchInventorySubtab('movements')">Show All Movements</button>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Variant SKU</th>
+                      <th>Frame &amp; Colour</th>
+                      <th>Quantity</th>
+                      <th>Change</th>
+                      <th>Type</th>
+                      <th>Staff &amp; Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inv-movements-table-body">
+                    <tr><td colspan="7" class="empty-state-box">Loading stock movements…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Inventory Sub-view 4: Stock Import History -->
+            <div data-inv-pane="history" style="display:none;">
+              <div class="card-table-wrap">
+                <div class="table-filter-bar">
+                  <strong>Stock Count Import Batches</strong>
+                  <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.loadStockImportHistory()">Refresh</button>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Batch ID</th>
+                      <th>Source</th>
+                      <th>Date</th>
+                      <th>Staff</th>
+                      <th>Total SKUs</th>
+                      <th>Outcome</th>
+                      <th>Failed</th>
+                      <th>Status</th>
+                      <th>Report</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stk-import-history-body">
+                    <tr><td colspan="9" class="empty-state-box">Loading stock import history…</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
 
-          <!-- ═════════ 4. SECTION: 4-STEP LENSES ═════════ -->
+          <!-- ═════════ SECTION 4: LENS PRICING ═════════ -->
           <section id="sec-lenses" class="admin-section">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">4-Step Precision Lens Configurator & Pricing</h2>
-                <p class="section-desc">Configure optical usages, refractive index thicknesses, and laboratory coatings.</p>
+                <h2 class="section-h2">Lens Pricing &amp; Optical Tiers</h2>
+                <p class="section-desc">Configure lens usages, refractive index thickness upgrades, and protective coatings in INR.</p>
               </div>
             </div>
 
-            <!-- Tier 1: Usage -->
             <div class="card-table-wrap" style="margin-bottom:1.5rem;">
-              <div class="table-filter-bar">
-                <strong>Step 1 — Lens Usage Types & Base Fees</strong>
-              </div>
+              <div class="table-filter-bar"><strong>Step 1 — Lens Usage Types</strong></div>
               <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Usage Type</th>
-                    <th>Clinical Description</th>
-                    <th>Base Fee (INR)</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Usage Type</th><th>Clinical Description</th><th>Base Fee (INR)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="lenses-usages-body"></tbody>
               </table>
             </div>
 
-            <!-- Tier 2: Thickness -->
             <div class="card-table-wrap" style="margin-bottom:1.5rem;">
-              <div class="table-filter-bar">
-                <strong>Step 3 — Refractive Index Thickness Upgrades</strong>
-              </div>
+              <div class="table-filter-bar"><strong>Step 3 — Refractive Index Thickness</strong></div>
               <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Index Profile</th>
-                    <th>Recommended Diopter Range</th>
-                    <th>Add-on Surcharge (INR)</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Index Profile</th><th>Recommended Diopter Range</th><th>Add-on Surcharge (INR)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="lenses-thicknesses-body"></tbody>
               </table>
             </div>
 
-            <!-- Tier 3: Coatings -->
             <div class="card-table-wrap">
-              <div class="table-filter-bar">
-                <strong>Step 4 — Protective Lens Treatments & Coatings</strong>
-              </div>
+              <div class="table-filter-bar"><strong>Step 4 — Coatings &amp; Treatments</strong></div>
               <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Coating Formulation</th>
-                    <th>Protection Profile</th>
-                    <th>Add-on Surcharge (INR)</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Coating Formulation</th><th>Protection Profile</th><th>Add-on Surcharge (INR)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="lenses-coatings-body"></tbody>
               </table>
             </div>
           </section>
 
-          <!-- ═════════ 5. SECTION: EYE TEST APPOINTMENTS ═════════ -->
-          <section id="sec-appointments" class="admin-section">
-            <div class="section-header-bar">
-              <div>
-                <h2 class="section-h2">In-Store Eye Test Consultation Queue</h2>
-                <p class="section-desc">Manage optometric appointments, prevent slot collisions, and record consultation status.</p>
-              </div>
-            </div>
-
-            <div class="card-table-wrap">
-              <div class="table-filter-bar">
-                <div class="table-filter-group">
-                  <select id="appt-filter-status" class="admin-select" onchange="OptiiAdmin.loadAppointments()">
-                    <option value="">All Appointments</option>
-                    <option value="confirmed">Confirmed Appointments</option>
-                    <option value="completed">Completed Consultations</option>
-                    <option value="cancelled">Cancelled Bookings</option>
-                  </select>
-                </div>
-              </div>
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Booking #</th>
-                    <th>Patron Details</th>
-                    <th>Appointment Date</th>
-                    <th>Slot Window</th>
-                    <th>Status</th>
-                    <th>Optometrist Clinical Notes</th>
-                    <th>Operational Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="appointments-table-body">
-                  <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading patient consultations…</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- ═════════ 6. SECTION: ORDERS & LAB GLAZING ═════════ -->
-          <section id="sec-orders" class="admin-section">
-            <div class="section-header-bar">
-              <div>
-                <h2 class="section-h2">Optical Orders & Precision Lab Glazing</h2>
-                <p class="section-desc">Itemized frame and lens inspection, courier tracking assignment, and lifecycle staging.</p>
-              </div>
-            </div>
-
-            <div class="card-table-wrap">
-              <div class="table-filter-bar">
-                <div class="table-filter-group">
-                  <input type="text" id="orders-search-input" class="admin-search-input" placeholder="Search order #, customer, phone…" oninput="OptiiAdmin.loadOrders()" />
-                  <select id="orders-filter-status" class="admin-select" onchange="OptiiAdmin.loadOrders()">
-                    <option value="">All Order Stages</option>
-                    <option value="placed">Placed (Pending Glazing)</option>
-                    <option value="processing">Processing</option>
-                    <option value="lab_glazing">Lab Precision Glazing</option>
-                    <option value="shipped">Dispatched / In Transit</option>
-                    <option value="delivered">Delivered / Atelier Handover</option>
-                    <option value="cancelled">Cancelled & Restocked</option>
-                  </select>
-                </div>
-              </div>
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Order #</th>
-                    <th>Patron</th>
-                    <th>Order Value</th>
-                    <th>Payment</th>
-                    <th>Fulfillment Stage</th>
-                    <th>Tracking #</th>
-                    <th>Order Date</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="orders-table-body">
-                  <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading orders…</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- ═════════ 7. SECTION: WHATSAPP INQUIRIES ═════════ -->
-          <section id="sec-enquiries" class="admin-section">
-            <div class="section-header-bar">
-              <div>
-                <h2 class="section-h2">Customer WhatsApp Commerce Inquiries</h2>
-                <p class="section-desc">Pre-order consultations, frame styling advice and direct one-click WhatsApp client engagement.</p>
-              </div>
-            </div>
-
-            <div class="card-table-wrap">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Customer Name</th>
-                    <th>WhatsApp Phone</th>
-                    <th>Product / Bag Inquiry</th>
-                    <th>Lead Status</th>
-                    <th>Logged At</th>
-                    <th>Direct Contact</th>
-                  </tr>
-                </thead>
-                <tbody id="enquiries-table-body">
-                  <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading customer leads…</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- ═════════ 8. SECTION: TAXONOMY & SHAPES ═════════ -->
+          <!-- ═════════ SECTION 5: BRANDS & SHAPES ═════════ -->
           <section id="sec-taxonomy" class="admin-section">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Optical Brands, Frame Shapes & Categories</h2>
-                <p class="section-desc">Manage atelier taxonomy, SVG silhouette line art, and catalog classification.</p>
+                <h2 class="section-h2">Brands, Shapes &amp; Categories</h2>
+                <p class="section-desc">Manage catalog taxonomy referenced during single-frame creation and bulk imports.</p>
               </div>
             </div>
 
-            <div class="form-grid-3">
-              <!-- Brands Column -->
-              <div class="card-table-wrap">
-                <div class="table-filter-bar">
-                  <strong>Optical Brands</strong>
+            <div class="panel-card" style="margin-bottom:1.25rem;" data-role-guard="admin">
+              <div class="panel-title">Add New Brand</div>
+              <form class="form-grid-3" onsubmit="OptiiAdmin.handleCreateBrand(event)" style="align-items:end;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="tax-brand-name">Brand Name</label>
+                  <input type="text" id="tax-brand-name" name="name" class="form-control" placeholder="e.g. Lindberg Atelier" required />
                 </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="tax-brand-slug">URL Slug (optional)</label>
+                  <input type="text" id="tax-brand-slug" name="slug" class="form-control" placeholder="lindberg-atelier" />
+                </div>
+                <div>
+                  <button type="submit" class="btn-primary">Add Brand</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="card-table-wrap">
+                <div class="table-filter-bar"><strong>Optical Brands</strong></div>
                 <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Brand</th>
-                      <th>Slug</th>
-                      <th>Catalog</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
+                  <thead><tr><th>Brand</th><th>Slug</th><th>Catalog</th><th>Action</th></tr></thead>
                   <tbody id="taxonomy-brands-body"></tbody>
                 </table>
               </div>
-
-              <!-- Shapes Column -->
               <div class="card-table-wrap">
-                <div class="table-filter-bar">
-                  <strong>Frame Shapes</strong>
-                </div>
+                <div class="table-filter-bar"><strong>Frame Shapes</strong></div>
                 <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Silhouette</th>
-                      <th>Slug</th>
-                      <th>Count</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
+                  <thead><tr><th>Silhouette</th><th>Slug</th><th>Count</th><th>Action</th></tr></thead>
                   <tbody id="taxonomy-shapes-body"></tbody>
                 </table>
               </div>
-
-              <!-- Categories Column -->
               <div class="card-table-wrap">
-                <div class="table-filter-bar">
-                  <strong>Primary Categories</strong>
-                </div>
+                <div class="table-filter-bar"><strong>Categories</strong></div>
                 <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Slug</th>
-                      <th>Items</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
+                  <thead><tr><th>Category</th><th>Slug</th><th>Items</th><th>Action</th></tr></thead>
                   <tbody id="taxonomy-cats-body"></tbody>
                 </table>
               </div>
             </div>
           </section>
 
-          <!-- ═════════ 9. SECTION: AUDIT TRAIL ═════════ -->
-          <section id="sec-audit" class="admin-section" data-role-guard="admin">
+          <!-- ═════════ SECTION 6: ORDERS & LAB ═════════ -->
+          <section id="sec-orders" class="admin-section">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Administrative Operation Audit Trail</h2>
-                <p class="section-desc">Cryptographically verifiable immutable audit log of administrative actions, edits, and stock movements.</p>
+                <h2 class="section-h2">Orders &amp; Lab Fulfillment</h2>
+                <p class="section-desc">Track optical orders, lab glazing stages, refunds, and manual carrier references.</p>
               </div>
             </div>
-
             <div class="card-table-wrap">
+              <div class="table-filter-bar">
+                <div class="table-filter-group">
+                  <input type="text" id="orders-search-input" class="admin-search-input" placeholder="Search order #, customer, phone…" oninput="OptiiAdmin.debouncedOrderSearch()" />
+                  <select id="orders-filter-status" class="admin-select" onchange="OptiiAdmin.loadOrders()">
+                    <option value="">All Order Stages</option>
+                    <option value="placed">Placed (Pending Glazing)</option>
+                    <option value="processing">Processing</option>
+                    <option value="lab_glazing">Lab Glazing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled &amp; Restocked</option>
+                  </select>
+                </div>
+              </div>
               <table class="admin-table">
                 <thead>
-                  <tr>
-                    <th>Log #</th>
-                    <th>Timestamp</th>
-                    <th>Staff User</th>
-                    <th>Action</th>
-                    <th>Target Entity</th>
-                    <th>Client IP</th>
-                  </tr>
+                  <tr><th>Order #</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Stage</th><th>Tracking Ref</th><th>Date</th><th>Action</th></tr>
                 </thead>
-                <tbody id="audit-table-body">
-                  <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading audit trail…</td></tr>
+                <tbody id="orders-table-body">
+                  <tr><td colspan="8" class="empty-state-box">Loading orders…</td></tr>
                 </tbody>
               </table>
             </div>
           </section>
 
-          <!-- ═════════ 10. SECTION: STAFF ACCOUNTS ═════════ -->
+          <!-- ═════════ SECTION 7: APPOINTMENTS ═════════ -->
+          <section id="sec-appointments" class="admin-section">
+            <div class="section-header-bar">
+              <div>
+                <h2 class="section-h2">Eye Test Appointments</h2>
+                <p class="section-desc">Manage in-store consultation bookings with slot collision prevention.</p>
+              </div>
+            </div>
+            <div class="card-table-wrap">
+              <div class="table-filter-bar">
+                <div class="table-filter-group">
+                  <select id="appt-filter-scope" class="admin-select" onchange="OptiiAdmin.loadAppointments()" aria-label="Filter appointments by date scope">
+                    <option value="">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="upcoming">Upcoming</option>
+                  </select>
+                  <select id="appt-filter-status" class="admin-select" onchange="OptiiAdmin.loadAppointments()" aria-label="Filter appointments by status">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Booking #</th><th>Customer</th><th>Phone</th><th>Date</th><th>Time</th><th>Store</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="appointments-table-body">
+                  <tr><td colspan="8" class="empty-state-box">Loading appointments…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ═════════ SECTION 8: CUSTOMER ENQUIRIES ═════════ -->
+          <section id="sec-enquiries" class="admin-section">
+            <div class="section-header-bar">
+              <div>
+                <h2 class="section-h2">Customer Enquiries</h2>
+                <p class="section-desc">Manage WhatsApp and web frame enquiries and track follow-up status.</p>
+              </div>
+            </div>
+            <div class="card-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>ID</th><th>Customer</th><th>Phone</th><th>Channel</th><th>Product Reference</th><th>Received</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody id="enquiries-table-body">
+                  <tr><td colspan="8" class="empty-state-box">Loading customer enquiries…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ═════════ SECTION 9: TEAM & ROLES ═════════ -->
           <section id="sec-users" class="admin-section" data-role-guard="admin">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Staff Accounts & RBAC Permissions</h2>
-                <p class="section-desc">Manage administrative, clinical optometrist and atelier staff credentials.</p>
+                <h2 class="section-h2">Team &amp; Role Permissions</h2>
+                <p class="section-desc">Manage Admin, Optometrist, and Store Staff access levels.</p>
               </div>
-              <button type="button" class="btn-primary" onclick="OptiiAdmin.openNewUserModal()">
-                + Add Staff Member
-              </button>
+              <button type="button" class="btn-primary" onclick="OptiiAdmin.openNewUserModal()">+ Add Staff Member</button>
             </div>
-
             <div class="card-table-wrap">
               <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Staff ID</th>
-                    <th>Full Name</th>
-                    <th>Username</th>
-                    <th>Role Clearance</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Staff ID</th><th>Full Name</th><th>Username</th><th>Role</th><th>Actions</th></tr></thead>
                 <tbody id="users-table-body">
-                  <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--ink-muted);">Loading staff directory…</td></tr>
+                  <tr><td colspan="5" class="empty-state-box">Loading team directory…</td></tr>
                 </tbody>
               </table>
             </div>
           </section>
 
-          <!-- ═════════ 11. SECTION: CLINIC SETTINGS ═════════ -->
+          <!-- ═════════ SECTION 10: ACTIVITY LOG ═════════ -->
+          <section id="sec-audit" class="admin-section" data-role-guard="admin">
+            <div class="section-header-bar">
+              <div>
+                <h2 class="section-h2">Activity Log &amp; Audit Trail</h2>
+                <p class="section-desc">Recorded administrative actions, imports, and order lifecycle transitions.</p>
+              </div>
+            </div>
+            <div class="card-table-wrap">
+              <div class="table-filter-bar">
+                <input type="text" id="audit-filter-action" class="admin-search-input" placeholder="Filter by action, staff user, or entity…" oninput="OptiiAdmin.loadAuditLogs()" />
+              </div>
+              <table class="admin-table">
+                <thead><tr><th>Log #</th><th>Timestamp</th><th>Staff</th><th>Action</th><th>Entity</th><th>IP Address</th></tr></thead>
+                <tbody id="audit-table-body">
+                  <tr><td colspan="6" class="empty-state-box">Loading activity log…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ═════════ SECTION 11: STORE SETTINGS ═════════ -->
           <section id="sec-settings" class="admin-section" data-role-guard="admin">
             <div class="section-header-bar">
               <div>
-                <h2 class="section-h2">Clinic & Store Settings</h2>
-                <p class="section-desc">Operating hours, clinic address, WhatsApp contact routing and delivery defaults.</p>
+                <h2 class="section-h2">Store &amp; Clinic Settings</h2>
+                <p class="section-desc">Clinic identity, physical address, and WhatsApp business contact number.</p>
               </div>
             </div>
-
             <div class="card-table-wrap" style="max-width:640px;padding:1.5rem;">
               <form onsubmit="OptiiAdmin.handleSaveSettings(event)">
                 <div class="form-group">
-                  <label class="form-label" for="set-store-name">Atelier Name</label>
-                  <input type="text" id="set-store-name" class="form-control" value="Optii Atelier Thiruvarur" />
+                  <label class="form-label" for="set-store-name">Atelier / Store Name</label>
+                  <input type="text" id="set-store-name" class="form-control" required />
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="set-store-address">Clinic Physical Address</label>
-                  <textarea id="set-store-address" class="form-control" style="min-height:70px;">12 Kamalalayam West Bank, Near Railway Feeder Rd, Thiruvarur, Tamil Nadu 610001</textarea>
+                  <textarea id="set-store-address" class="form-control" style="min-height:70px;" required></textarea>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="set-store-phone">Official WhatsApp Routing Number</label>
-                  <input type="text" id="set-store-phone" class="form-control" value="+919876543210" />
+                  <input type="text" id="set-store-phone" class="form-control" required />
                 </div>
                 <button type="submit" class="btn-primary">Save Atelier Settings</button>
               </form>
@@ -679,217 +966,190 @@
     </div>
   </div>
 
-  <!-- ═════════ 3. MODALS ═════════ -->
+  <!-- ═════════ 3. ACCESSIBLE MODALS ═════════ -->
 
-  <!-- Modal: Create Master Frame Silhouette -->
-  <div id="modal-new-product" class="admin-modal-backdrop">
+  <!-- Guided Modal: Add Single Master Frame (+ Optional First Variant) -->
+  <div id="modal-new-product" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="new-product-modal-title" aria-hidden="true">
     <div class="admin-modal-card wide">
       <div class="admin-modal-header">
-        <h3 class="admin-modal-title">New Optical Frame Silhouette</h3>
-        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-new-product')">✕</button>
+        <h3 class="admin-modal-title" id="new-product-modal-title">Add Single Optical Frame</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-new-product')" aria-label="Close">✕</button>
       </div>
       <form onsubmit="OptiiAdmin.handleCreateProduct(event)">
         <div class="admin-modal-body">
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label class="form-label">Silhouette Name</label>
-              <input type="text" name="name" class="form-control" placeholder="e.g. Akira Bold Round" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">URL Slug</label>
-              <input type="text" name="slug" class="form-control" placeholder="e.g. akira-bold-round" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Master SKU</label>
-              <input type="text" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01" required />
+          <div class="form-section-box">
+            <div class="form-section-heading">1. Basic Information</div>
+            <div class="form-grid-3">
+              <div class="form-group"><label class="form-label">Frame Name *</label><input type="text" name="name" class="form-control" placeholder="e.g. Akira Bold Round" required /></div>
+              <div class="form-group"><label class="form-label">URL Slug</label><input type="text" name="slug" class="form-control" placeholder="auto-generated if blank" /></div>
+              <div class="form-group"><label class="form-label">Master Frame SKU *</label><input type="text" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01" required /></div>
             </div>
           </div>
 
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label class="form-label" for="new-prod-brand">Brand</label>
-              <select name="brand_id" id="new-prod-brand" class="form-control" required>
-                <option value="">Loading brands…</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="new-prod-category">Category</label>
-              <select name="category_id" id="new-prod-category" class="form-control" required>
-                <option value="">Loading categories…</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="new-prod-shape">Frame Shape</label>
-              <select name="shape_id" id="new-prod-shape" class="form-control" required>
-                <option value="">Loading shapes…</option>
-              </select>
+          <div class="form-section-box">
+            <div class="form-section-heading">2. Classification</div>
+            <div class="form-grid-3">
+              <div class="form-group"><label class="form-label" for="new-prod-brand">Brand *</label><select name="brand_id" id="new-prod-brand" class="form-control" required></select></div>
+              <div class="form-group"><label class="form-label" for="new-prod-category">Category *</label><select name="category_id" id="new-prod-category" class="form-control" required></select></div>
+              <div class="form-group"><label class="form-label" for="new-prod-shape">Frame Shape *</label><select name="shape_id" id="new-prod-shape" class="form-control" required></select></div>
             </div>
           </div>
 
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label class="form-label">Base Retail Price (₹ INR)</label>
-              <input type="number" name="base_price_inr" class="form-control" placeholder="6800" min="0" required />
+          <div class="form-section-box">
+            <div class="form-section-heading">3. Frame Specifications</div>
+            <div class="form-grid-3">
+              <div class="form-group"><label class="form-label">Material *</label><input type="text" name="material" class="form-control" placeholder="Italian Bio-Acetate" required /></div>
+              <div class="form-group">
+                <label class="form-label">Frame Fit *</label>
+                <select name="frame_fit" class="form-control" required>
+                  <option value="Medium">Medium Fit</option>
+                  <option value="Narrow">Narrow Fit</option>
+                  <option value="Wide">Wide Fit</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gender *</label>
+                <select name="gender" class="form-control" required>
+                  <option value="unisex">Unisex</option>
+                  <option value="men">Men</option>
+                  <option value="women">Women</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Material Craft</label>
-              <input type="text" name="material" class="form-control" placeholder="Handcrafted Mazzucchelli Acetate" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Frame Fit Profile</label>
-              <select name="frame_fit" class="form-control" required>
-                <option value="Medium">Medium Fit (Standard)</option>
-                <option value="Narrow">Narrow Fit</option>
-                <option value="Wide">Wide Fit</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-grid-3">
-            <div class="form-group">
-              <label class="form-label">Lens Width (mm)</label>
-              <input type="number" name="lens_width_mm" class="form-control" placeholder="48" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Bridge Width (mm)</label>
-              <input type="number" name="bridge_width_mm" class="form-control" placeholder="21" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Temple Length (mm)</label>
-              <input type="number" name="temple_length_mm" class="form-control" placeholder="145" required />
+            <div class="form-grid-3">
+              <div class="form-group"><label class="form-label">Lens Width (mm) *</label><input type="number" name="lens_width_mm" class="form-control" value="51" min="30" max="75" required /></div>
+              <div class="form-group"><label class="form-label">Bridge Width (mm) *</label><input type="number" name="bridge_width_mm" class="form-control" value="20" min="10" max="35" required /></div>
+              <div class="form-group"><label class="form-label">Temple Length (mm) *</label><input type="number" name="temple_length_mm" class="form-control" value="150" min="100" max="180" required /></div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Editorial Description & Optical Specifications</label>
-            <textarea name="description" class="form-control" placeholder="Handmade silhouette with custom core wire and German-engineered 5-barrel hinges." required></textarea>
+          <div class="form-section-box">
+            <div class="form-section-heading">4. Pricing &amp; Description</div>
+            <div class="form-grid-2">
+              <div class="form-group"><label class="form-label">Base Retail Price (₹ INR) *</label><input type="number" name="base_price_inr" class="form-control" placeholder="9500" min="1" required /></div>
+              <div class="form-group"><label class="form-label">Description</label><input type="text" name="description" class="form-control" placeholder="Handcrafted optical frame…" /></div>
+            </div>
+          </div>
+
+          <div class="form-section-box">
+            <div class="form-section-heading">5. First Colour Variant &amp; 6. Opening Stock (Optional)</div>
+            <div class="form-grid-3">
+              <div class="form-group"><label class="form-label">Variant SKU</label><input type="text" name="initial_variant_sku" class="form-control" placeholder="e.g. OPT-AKR-01-BLK" /></div>
+              <div class="form-group"><label class="form-label">Colour Name</label><input type="text" name="initial_color_name" class="form-control" placeholder="Matte Black" /></div>
+              <div class="form-group"><label class="form-label">Colour Hex (#RRGGBB)</label><input type="text" name="initial_color_hex" class="form-control" placeholder="#111111" /></div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group"><label class="form-label">Opening Stock</label><input type="number" name="initial_opening_stock" class="form-control" value="0" min="0" /></div>
+              <div class="form-group"><label class="form-label">Variant Price Override (₹)</label><input type="number" name="initial_price_override" class="form-control" placeholder="Leave blank to use base price" min="1" /></div>
+            </div>
           </div>
         </div>
         <div class="admin-modal-footer">
           <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-new-product')">Cancel</button>
-          <button type="submit" class="btn-primary">Save Frame Silhouette</button>
+          <button type="submit" class="btn-primary">Create Master Frame</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Manage Variants & Photography -->
-  <div id="modal-variants-manager" class="admin-modal-backdrop">
+  <!-- Modal: Master Frame Detail, Variants & Photography -->
+  <div id="modal-variants-manager" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="variants-modal-title" aria-hidden="true">
     <div class="admin-modal-card wide">
       <div class="admin-modal-header">
-        <h3 class="admin-modal-title" id="variants-modal-title">Colorways & Photography</h3>
-        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-variants-manager')">✕</button>
+        <h3 class="admin-modal-title" id="variants-modal-title">Frame &amp; Variants</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-variants-manager')" aria-label="Close">✕</button>
       </div>
       <div class="admin-modal-body">
-        <h4 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;">Configured Colorways & Image Galleries</h4>
-        <div id="variants-list-container">
-          <!-- Populated dynamically -->
-        </div>
+        <div class="frame-master-summary" id="variants-master-summary"></div>
+        <h4 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;">Configured Colour Variants &amp; Galleries</h4>
+        <div id="variants-list-container"></div>
 
-        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-light);">
-          <h4 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;">+ Add New Colorway Variant</h4>
+        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-light);" data-role-guard="admin">
+          <h4 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;">+ Add New Colour Variant</h4>
           <form onsubmit="OptiiAdmin.handleAddVariant(event)">
             <input type="hidden" id="variant-add-product-id" />
             <div class="form-grid-3">
-              <div class="form-group">
-                <label class="form-label">Color Name</label>
-                <input type="text" name="color_name" class="form-control" placeholder="e.g. Tokyo Tortoise" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Hex (#RRGGBB)</label>
-                <input type="text" name="color_hex" class="form-control" placeholder="#5a3d28" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Secondary Hex (Optional)</label>
-                <input type="text" name="color_secondary_hex" class="form-control" placeholder="#d4a373" />
-              </div>
+              <div class="form-group"><label class="form-label">Colour Name</label><input type="text" name="color_name" class="form-control" placeholder="e.g. Tokyo Tortoise" required /></div>
+              <div class="form-group"><label class="form-label">Hex (#RRGGBB)</label><input type="text" name="color_hex" class="form-control" placeholder="#5a3d28" required /></div>
+              <div class="form-group"><label class="form-label">Secondary Hex (Optional)</label><input type="text" name="color_secondary_hex" class="form-control" placeholder="#d4a373" /></div>
             </div>
             <div class="form-grid-3">
-              <div class="form-group">
-                <label class="form-label">Variant SKU</label>
-                <input type="text" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01-TOR" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Initial Stock Count</label>
-                <input type="number" name="stock_quantity" class="form-control" value="10" min="0" required />
-              </div>
-              <div class="form-group" style="justify-content:center;">
-                <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-top:18px;cursor:pointer;">
-                  <input type="checkbox" name="is_default" value="1" /> Set as Default Colorway
-                </label>
-              </div>
+              <div class="form-group"><label class="form-label">Variant SKU</label><input type="text" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01-TOR" required /></div>
+              <div class="form-group"><label class="form-label">Initial Stock Count</label><input type="number" name="stock_quantity" class="form-control" value="10" min="0" required /></div>
+              <div class="form-group"><label class="form-label">Price Override (₹)</label><input type="number" name="price_override_inr" class="form-control" placeholder="Blank = base price" min="1" /></div>
             </div>
-            <button type="submit" class="btn-primary" style="margin-top:6px;">Add Variant Colorway</button>
+            <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-bottom:10px;cursor:pointer;">
+              <input type="checkbox" name="is_default" value="1" /> Set as Default Colorway
+            </label>
+            <div><button type="submit" class="btn-primary">Add Colour Variant</button></div>
           </form>
         </div>
       </div>
       <div class="admin-modal-footer">
-        <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-variants-manager')">Close Window</button>
+        <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-variants-manager')">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Adjust Stock with Mandatory Reason -->
-  <div id="modal-adjust-stock" class="admin-modal-backdrop">
+  <!-- Modal: Adjust Stock with Live Preview -->
+  <div id="modal-adjust-stock" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="adjust-stock-modal-title" aria-hidden="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
-        <h3 class="admin-modal-title">Inventory Stock Adjustment</h3>
-        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-adjust-stock')">✕</button>
+        <h3 class="admin-modal-title" id="adjust-stock-modal-title">Inventory Stock Adjustment</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-adjust-stock')" aria-label="Close">✕</button>
       </div>
-      <form onsubmit="OptiiAdmin.handleStockAdjustment(event)">
+      <form onsubmit="OptiiAdmin.submitStockAdjustment(event)">
         <div class="admin-modal-body">
           <input type="hidden" id="adj-variant-id" />
           <div style="background:var(--bg-subtle);padding:12px;border-radius:var(--radius-sm);margin-bottom:1rem;">
             <div style="font-weight:700;font-size:14px;" id="adj-item-title">Variant</div>
-            <div style="font-size:12px;color:var(--ink-secondary);margin-top:2px;" id="adj-current-stock">0 units in atelier</div>
+            <div style="font-size:12px;color:var(--ink-secondary);margin-top:2px;" id="adj-current-stock">0 units</div>
+            <div style="font-size:13px;font-weight:700;margin-top:6px;">New Quantity Preview: <span id="adj-new-stock-preview">—</span></div>
           </div>
 
           <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Adjustment Delta (+ or - units)</label>
-              <input type="number" name="change_quantity" id="adj-delta" class="form-control" value="1" required />
-              <small style="color:var(--ink-muted);font-size:12px;">Positive adds to stock, negative deducts.</small>
+              <label class="form-label" for="adj-delta">Adjustment Delta (+ or - units)</label>
+              <input type="number" name="change_quantity" id="adj-delta" class="form-control" value="1" oninput="OptiiAdmin.updateAdjustedStockPreview()" required />
+              <small style="color:var(--ink-muted);font-size:12px;">Positive adds stock, negative deducts.</small>
             </div>
             <div class="form-group">
-              <label class="form-label">Movement Classification</label>
-              <select name="movement_type" class="form-control" required>
-                <option value="manual_adjustment">Manual Count Adjustment</option>
-                <option value="replenishment">Restock & Shipment Delivery</option>
-                <option value="damage_writeoff">Damage / Atelier Write-off</option>
+              <label class="form-label" for="adj-movement-type">Movement Type</label>
+              <select name="movement_type" id="adj-movement-type" class="form-control" required>
+                <option value="manual_adjustment">Manual Adjustment</option>
+                <option value="replenishment">Replenishment / Delivery</option>
+                <option value="damage_writeoff">Damage Write-off</option>
               </select>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Mandatory Operational Reason</label>
-            <textarea name="reason" id="adj-reason" class="form-control" placeholder="e.g. Physical inventory count verified by staff; added 5 units received from lab." required></textarea>
+            <label class="form-label" for="adj-reason">Mandatory Audit Reason (min 5 characters)</label>
+            <textarea name="reason" id="adj-reason" class="form-control" minlength="5" placeholder="e.g. Physical count verified; added 5 units received from supplier." required></textarea>
           </div>
         </div>
         <div class="admin-modal-footer">
           <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-adjust-stock')">Cancel</button>
-          <button type="submit" class="btn-primary">Commit Stock Update</button>
+          <button type="submit" class="btn-primary" id="btn-commit-stock-adjust">Commit Stock Update</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Reschedule Appointment with Collision Guard -->
-  <div id="modal-reschedule-appt" class="admin-modal-backdrop">
+  <!-- Modal: Reschedule Appointment -->
+  <div id="modal-reschedule-appt" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resched-title" aria-hidden="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
         <h3 class="admin-modal-title" id="resched-title">Reschedule Consultation</h3>
-        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-reschedule-appt')">✕</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-reschedule-appt')" aria-label="Close">✕</button>
       </div>
       <form onsubmit="OptiiAdmin.handleReschedule(event)">
         <div class="admin-modal-body">
           <input type="hidden" id="resched-appt-id" />
           <div class="form-grid-2">
+            <div class="form-group"><label class="form-label" for="resched-date">New Date</label><input type="date" id="resched-date" class="form-control" required /></div>
             <div class="form-group">
-              <label class="form-label">New Date</label>
-              <input type="date" id="resched-date" class="form-control" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">New Time Slot</label>
+              <label class="form-label" for="resched-time">New Time Slot</label>
               <select id="resched-time" class="form-control" required>
                 <option value="10:00">10:00 AM</option>
                 <option value="11:00">11:00 AM</option>
@@ -902,9 +1162,7 @@
               </select>
             </div>
           </div>
-          <p style="font-size:12px;color:var(--ink-secondary);margin-top:8px;">
-            The server strictly checks and enforces slot availability. If this slot is already booked, an error will prevent collision.
-          </p>
+          <p style="font-size:12px;color:var(--ink-secondary);margin-top:8px;">The server enforces slot collision checks before updating.</p>
         </div>
         <div class="admin-modal-footer">
           <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-reschedule-appt')">Cancel</button>
@@ -915,17 +1173,15 @@
   </div>
 
   <!-- Modal: View & Transition Order -->
-  <div id="modal-order-detail" class="admin-modal-backdrop">
+  <div id="modal-order-detail" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="order-detail-title" aria-hidden="true">
     <div class="admin-modal-card wide">
       <div class="admin-modal-header">
         <h3 class="admin-modal-title" id="order-detail-title">Order Details</h3>
-        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-order-detail')">✕</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-order-detail')" aria-label="Close">✕</button>
       </div>
       <div class="admin-modal-body">
         <input type="hidden" id="order-detail-target-num" />
-        <div id="order-detail-content">
-          <!-- Dynamically populated -->
-        </div>
+        <div id="order-detail-content"></div>
       </div>
       <div class="admin-modal-footer">
         <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-order-detail')">Close</button>
@@ -935,33 +1191,24 @@
   </div>
 
   <!-- Modal: Create Staff Account -->
-  <div id="modal-new-user" class="admin-modal-backdrop">
+  <div id="modal-new-user" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="new-user-modal-title" aria-hidden="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
-        <h3 class="admin-modal-title">New Staff Account</h3>
-        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-new-user')">✕</button>
+        <h3 class="admin-modal-title" id="new-user-modal-title">New Staff Account</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.closeModal('modal-new-user')" aria-label="Close">✕</button>
       </div>
       <form onsubmit="OptiiAdmin.handleCreateUser(event)">
         <div class="admin-modal-body">
-          <div class="form-group">
-            <label class="form-label">Full Name</label>
-            <input type="text" name="full_name" class="form-control" placeholder="Dr. S. Ramesh" required />
-          </div>
+          <div class="form-group"><label class="form-label">Full Name</label><input type="text" name="full_name" class="form-control" placeholder="Dr. S. Ramesh" required /></div>
           <div class="form-grid-2">
-            <div class="form-group">
-              <label class="form-label">Staff Username</label>
-              <input type="text" name="username" class="form-control" placeholder="sramesh" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Temporary Password</label>
-              <input type="password" name="password" class="form-control" placeholder="••••••••" required />
-            </div>
+            <div class="form-group"><label class="form-label">Staff Username</label><input type="text" name="username" class="form-control" placeholder="sramesh" required /></div>
+            <div class="form-group"><label class="form-label">Temporary Password</label><input type="password" name="password" class="form-control" placeholder="••••••••" minlength="6" required /></div>
           </div>
           <div class="form-group">
             <label class="form-label">Role Clearance Level</label>
             <select name="role" class="form-control" required>
               <option value="staff">Store Staff (Inventory, Orders, Enquiries)</option>
-              <option value="optometrist">Clinical Optometrist (Eye Tests, Glazing, Lenses)</option>
+              <option value="optometrist">Clinical Optometrist (Eye Tests, Lenses, Orders)</option>
               <option value="admin">Master Administrator (Full Clearance)</option>
             </select>
           </div>
@@ -975,7 +1222,7 @@
   </div>
 
   <!-- Modal: Edit Lens Option Fee -->
-  <div id="modal-edit-lens-price" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="lens-price-modal-title">
+  <div id="modal-edit-lens-price" class="admin-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="lens-price-modal-title" aria-hidden="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
         <h3 class="admin-modal-title" id="lens-price-modal-title">Update Lens Option Fee</h3>
@@ -1000,7 +1247,24 @@
     </div>
   </div>
 
-  <!-- Controller Script -->
-  <script src="/js/admin.js"></script>
+  <!-- Modal: Accessible Confirmation Dialog -->
+  <div id="modal-confirm-action" class="admin-modal-backdrop" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-hidden="true">
+    <div class="admin-modal-card" style="max-width:460px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="confirm-modal-title">Confirm Action</h3>
+        <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.resolveConfirmation(false)" aria-label="Cancel">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <p id="confirm-modal-message" style="font-size:14px;color:var(--ink-secondary);line-height:1.5;">Are you sure?</p>
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="btn-secondary" onclick="OptiiAdmin.resolveConfirmation(false)">Cancel</button>
+        <button type="button" class="btn-primary" id="confirm-modal-submit" onclick="OptiiAdmin.resolveConfirmation(true)">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modular ES6 Admin Controller -->
+  <script type="module" src="/js/admin/app.js"></script>
 </body>
 </html>

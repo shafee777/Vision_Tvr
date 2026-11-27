@@ -65,12 +65,23 @@ const productCreateSchema = z.object({
   category_id: z.number().int().positive('Category ID is required.'),
   shape_id: z.number().int().positive('Shape ID is required.'),
   base_price_inr: z.number().positive('Price must be greater than zero.'),
+  gender: z.enum(['men', 'women', 'unisex']).optional().default('unisex'),
   material: z.string().trim().min(2).max(100),
   frame_fit: z.enum(['Narrow', 'Medium', 'Wide']),
   lens_width_mm: z.number().min(30).max(75, 'Lens width must be between 30mm and 75mm.'),
   bridge_width_mm: z.number().min(10).max(35, 'Bridge width must be between 10mm and 35mm.'),
   temple_length_mm: z.number().min(100).max(180, 'Temple length must be between 100mm and 180mm.'),
-  description: z.string().trim().optional().nullable()
+  frame_height_mm: z.number().positive().optional().nullable(),
+  total_width_mm: z.number().positive().optional().nullable(),
+  description: z.string().trim().optional().nullable(),
+  initial_variant: z.object({
+    color_name: z.string().trim().min(1, 'Variant colour name is required.'),
+    color_hex: z.string().trim().regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/, 'Invalid hex colour code.'),
+    color_secondary_hex: z.string().trim().optional().nullable(),
+    sku: z.string().trim().min(2, 'Variant SKU is required.').max(60),
+    price_override_inr: z.number().positive().optional().nullable(),
+    stock_quantity: z.number().int().min(0, 'Opening stock cannot be negative.').default(0)
+  }).optional().nullable()
 });
 
 const stockAdjustSchema = z.object({
