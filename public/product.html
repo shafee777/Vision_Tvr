@@ -122,17 +122,12 @@
       <!-- RIGHT COLUMN: Sticky Product Specifications & Purchasing -->
       <div class="pdp-sidebar">
         <div>
-          <div class="pdp-brand-tag" id="pdp-brand">OPTII ATELIER</div>
           <h1 class="pdp-title" id="pdp-title">Loading Silhouette…</h1>
+          <div class="pdp-brand-tag" id="pdp-brand" style="margin-top: 4px;">OPTII ATELIER</div>
           
           <div class="pdp-price-row" style="margin-top: 8px;">
             <div class="pdp-price" id="pdp-price">₹0</div>
             <div class="pdp-price-notice">Includes custom single-vision prescription lenses & anti-reflective coating</div>
-          </div>
-
-          <div class="pdp-reviews-badge" style="margin-top: 10px;">
-            <span class="pdp-reviews-stars">★★★★★</span>
-            <span>4.9 · 42 verified wearer reviews</span>
           </div>
         </div>
 
@@ -174,7 +169,7 @@
 
         <!-- Craftsmanship & Bio-Acetate Material Specs -->
         <div>
-          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-ink-muted); margin-bottom: 4px;">Material & Construction</div>
+          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-ink-muted); margin-bottom: 4px;">Material & Construction</div>
           <div style="font-size: 13.5px; font-weight: 500; color: var(--color-ink); line-height: 1.5;" id="pdp-material-spec">
             100% Biodegradable Italian Bio-Acetate · Handcrafted 5-Barrel German Hinges
           </div>
@@ -192,8 +187,8 @@
             Add Frame Only Without Prescription
           </button>
 
-          <button class="btn-whatsapp-hero" onclick="OptiiPDP.inquireOnWhatsApp()">
-            💬 Inquire & Order on WhatsApp (+91 94865 52324)
+          <button class="btn-whatsapp-hero" id="pdp-whatsapp-btn" onclick="OptiiPDP.inquireOnWhatsApp()">
+            Inquire & Order on WhatsApp
           </button>
         </div>
 
@@ -255,8 +250,7 @@
 
     <!-- RELATED PRODUCTS SECTION -->
     <section style="max-width: var(--container-max); margin: 4rem auto 2rem; padding: 0 var(--margin-desktop);">
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-ink-muted); margin-bottom: 8px;">Explore More Silhouettes</div>
-      <h3 style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.5rem;">Handcrafted in our Atelier</h3>
+      <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.5rem;">Handcrafted in our Atelier</h2>
       <div class="product-grid" id="pdp-related-grid">
         <!-- Injected dynamically -->
       </div>
@@ -268,7 +262,7 @@
     <button class="fullscreen-zoom-close" aria-label="Close Fullscreen View" onclick="OptiiPDP.closeZoomModal()">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <img class="fullscreen-zoom-img" id="fullscreen-zoom-img" src="" alt="High-Resolution Frame View" />
+    <img class="fullscreen-zoom-img" id="fullscreen-zoom-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="High-Resolution Frame View" />
   </div>
 
   <!-- 6. FOUR-STEP ADVANCED LENS CONFIGURATOR MODAL -->
@@ -518,7 +512,7 @@
         <span>Subtotal</span>
         <span id="cart-drawer-subtotal">₹0</span>
       </div>
-      <div style="font-size: 11px; color: var(--color-ink-muted);">Includes GST, microfiber case, and complimentary lens cleaner.</div>
+      <div style="font-size: 12px; color: var(--color-ink-muted);">Includes GST, microfiber case, and complimentary lens cleaner.</div>
       <button class="btn-pill-primary" style="background: var(--color-ink); color: #fff; text-align: center; width: 100%; margin-top: 8px;" onclick="OptiiCart.openCheckout()">
         Proceed to Checkout
       </button>
