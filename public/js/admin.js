@@ -375,8 +375,34 @@ const OptiiAdmin = {
     }
   },
 
-  openNewProductModal() {
+  async openNewProductModal() {
     this.openModal('modal-new-product');
+    const brandSel = document.getElementById('new-prod-brand');
+    const catSel = document.getElementById('new-prod-category');
+    const shapeSel = document.getElementById('new-prod-shape');
+
+    try {
+      const [brandsRes, catsRes, shapesRes] = await Promise.all([
+        this.request('/brands'),
+        this.request('/categories'),
+        this.request('/shapes')
+      ]);
+
+      if (brandSel) {
+        brandSel.innerHTML = (brandsRes.brands || [])
+          .map(b => `<option value="${b.id}">${b.name}</option>`).join('') || '<option value="">No brands found</option>';
+      }
+      if (catSel) {
+        catSel.innerHTML = (catsRes.categories || [])
+          .map(c => `<option value="${c.id}">${c.name}</option>`).join('') || '<option value="">No categories found</option>';
+      }
+      if (shapeSel) {
+        shapeSel.innerHTML = (shapesRes.shapes || [])
+          .map(s => `<option value="${s.id}">${s.name}</option>`).join('') || '<option value="">No shapes found</option>';
+      }
+    } catch (err) {
+      this.toast('Failed to load brands, categories, or shapes.', 'error');
+    }
   },
 
   async handleCreateProduct(e) {
