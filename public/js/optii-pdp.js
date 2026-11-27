@@ -68,6 +68,7 @@ const OptiiPDP = {
       }
     }
 
+    this.populateRxRanges();
     this.bindGlobalEvents();
     this.updateBadges();
 
@@ -812,8 +813,8 @@ const OptiiPDP = {
             <div style="font-size: 14px; font-weight: 600;">${item.product_name}</div>
             <div style="font-size: 12px; color: var(--color-ink-muted); margin-bottom: 4px;">${item.color_name} · ${item.dimensions}</div>
             
-            <div style="font-size: 11px; background: var(--color-surface-subtle); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px;">
-              👁️ ${lenses.usage_name} · ${lenses.thickness_name}
+            <div style="font-size: 12px; background: var(--color-surface-subtle); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px;">
+              ${lenses.usage_name} · ${lenses.thickness_name}
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
@@ -872,6 +873,37 @@ const OptiiPDP = {
       wishBadge.textContent = wishCount;
       wishBadge.style.display = wishCount > 0 ? 'flex' : 'none';
     }
+  },
+
+  populateRxRanges() {
+    const buildSph = (selectedVal) => {
+      const opts = [];
+      for (let v = 12.0; v >= -20.0; v -= 0.25) {
+        const val = (Math.round(v * 100) / 100).toFixed(2);
+        const label = v > 0 ? `+${val}` : (v === 0 ? '0.00 (Plano)' : val);
+        const sel = val === selectedVal ? ' selected' : '';
+        opts.push(`<option value="${val === '0.00' ? '0.00' : (v > 0 ? '+' + val : val)}"${sel}>${label}</option>`);
+      }
+      return opts.join('');
+    };
+    const buildCyl = (selectedVal) => {
+      const opts = [];
+      for (let v = 0.0; v >= -6.0; v -= 0.25) {
+        const val = (Math.round(v * 100) / 100).toFixed(2);
+        const sel = val === selectedVal ? ' selected' : '';
+        opts.push(`<option value="${val}"${sel}>${val}</option>`);
+      }
+      return opts.join('');
+    };
+
+    const odSph = document.getElementById('rx-od-sph');
+    const osSph = document.getElementById('rx-os-sph');
+    const odCyl = document.getElementById('rx-od-cyl');
+    const osCyl = document.getElementById('rx-os-cyl');
+    if (odSph) odSph.innerHTML = buildSph('-1.50');
+    if (osSph) osSph.innerHTML = buildSph('-1.75');
+    if (odCyl) odCyl.innerHTML = buildCyl('0.00');
+    if (osCyl) osCyl.innerHTML = buildCyl('0.00');
   },
 
   // ─── GLOBAL EVENTS & ACCORDIONS ───
