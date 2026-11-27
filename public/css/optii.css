@@ -16,8 +16,8 @@
 
   /* Typography Inks */
   --color-ink: #000000;
-  --color-ink-secondary: #666666;
-  --color-ink-muted: #757575;
+  --color-ink-secondary: #525252;
+  --color-ink-muted: #595959;
   --color-ink-inverted: #ffffff;
 
   /* Borders & Dividers */
@@ -1277,7 +1277,7 @@ img {
     flex-wrap: wrap;
     text-align: center;
     line-height: 1.35;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .site-header {
@@ -1303,12 +1303,21 @@ img {
   }
 
   .header-right {
-    gap: 4px !important;
+    gap: 2px !important;
   }
 
   .header-action-btn {
-    width: 36px !important;
-    height: 36px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .product-swatches-row {
+    gap: 2px;
+  }
+
+  .swatch-touch-container {
+    width: 44px;
+    height: 44px;
   }
 
   .shapes-strip-section {
