@@ -10,18 +10,29 @@ import { closeModal, openModal, resolveConfirmation, showToast, trapModalFocus }
 import { loadDashboardMetrics } from './dashboard/dashboard.js';
 import {
   debouncedProductSearch,
+  goToNewProductStep,
   handleCreateProduct,
   loadFrameCatalog,
+  moveStagedProductImage,
+  nextNewProductStep,
   openNewProductModal,
+  prevNewProductStep,
+  removeStagedProductImage,
+  setStagedProductPrimaryImage,
   switchCatalogSubtab,
   toggleProductActive,
-  updateProductFilter
+  updateProductFilter,
+  updateStagedProductImageType
 } from './catalog/frames.js';
 import {
   deleteProductImage,
+  deleteVariant,
   handleAddVariant,
   handleUploadImage,
-  loadFrameVariants
+  handleVariantFilesSelected,
+  loadFrameVariants,
+  moveVariantImage,
+  setVariantPrimaryImage
 } from './catalog/variants.js';
 import {
   addBlankCatalogueRow,
@@ -73,11 +84,26 @@ import {
   updateApptStatus
 } from './operations/appointments.js';
 import { loadEnquiries, updateEnquiryStatus } from './operations/enquiries.js';
-import { editLensPrice, handleSaveLensPrice, loadLenses } from './administration/lenses.js';
-import { deleteTaxonomyItem, handleCreateBrand, loadTaxonomy } from './administration/taxonomy.js';
+import { editLensPrice, editStep2Option, handleSaveLensPrice, loadLenses, openLensModal, saveStep2Option } from './administration/lenses.js';
+import {
+  deleteTaxonomyItem,
+  filterTaxonomyList,
+  handleCreateBrand,
+  loadTaxonomy,
+  openBrandModal,
+  openCategoryModal,
+  openShapeModal,
+  removeBrandLogo,
+  saveBrandModal,
+  saveCategoryModal,
+  saveShapeModal,
+  selectShapePreset,
+  toggleTaxonomyStatus,
+  updateShapeSvgPreview
+} from './administration/taxonomy.js';
 import { deleteUser, handleCreateUser, loadUsers, openNewUserModal } from './administration/team.js';
 import { loadAuditLogs } from './administration/audit.js';
-import { handleSaveSettings, loadSettings } from './administration/settings.js';
+import { handleSaveSettings, loadSettings, previewStoreLogoFile, removeStoreLogo, uploadStoreLogo } from './administration/settings.js';
 
 function showLoginScreen() {
   document.getElementById('login-screen').style.display = 'flex';
@@ -213,6 +239,10 @@ async function initAdminApp() {
     await verifySession();
   } else {
     showLoginScreen();
+    const roleParam = new URLSearchParams(window.location.search).get('role');
+    if (roleParam === 'staff' || roleParam === 'optometrist' || roleParam === 'admin') {
+      fillRoleCreds(roleParam);
+    }
   }
 }
 
@@ -239,12 +269,23 @@ window.OptiiAdmin = {
   updateProductFilter,
   switchCatalogSubtab,
   openNewProductModal,
+  goToNewProductStep,
+  nextNewProductStep,
+  prevNewProductStep,
   handleCreateProduct,
   toggleProductActive,
+  removeStagedProductImage,
+  moveStagedProductImage,
+  setStagedProductPrimaryImage,
+  updateStagedProductImageType,
   viewProductVariants: loadFrameVariants,
   loadFrameVariants,
   handleAddVariant,
+  deleteVariant,
+  handleVariantFilesSelected,
   handleUploadImage,
+  moveVariantImage,
+  setVariantPrimaryImage,
   deleteProductImage,
 
   // Catalogue Bulk Import
@@ -294,10 +335,24 @@ window.OptiiAdmin = {
 
   // Administration
   loadLenses,
+  openLensModal,
   editLensPrice,
   handleSaveLensPrice,
+  editStep2Option,
+  saveStep2Option,
   loadTaxonomy,
+  filterTaxonomyList,
   handleCreateBrand,
+  openBrandModal,
+  saveBrandModal,
+  removeBrandLogo,
+  openShapeModal,
+  saveShapeModal,
+  selectShapePreset,
+  updateShapeSvgPreview,
+  openCategoryModal,
+  saveCategoryModal,
+  toggleTaxonomyStatus,
   deleteTaxonomyItem,
   loadUsers,
   openNewUserModal,
@@ -305,6 +360,9 @@ window.OptiiAdmin = {
   deleteUser,
   loadAuditLogs,
   loadSettings,
+  previewStoreLogoFile,
+  uploadStoreLogo,
+  removeStoreLogo,
   handleSaveSettings
 };
 

@@ -3,22 +3,34 @@
  * Implements the Ace & Tate European Optical Retail Customer Journey
  */
 
+function resolveStoreImgSrc(url, fallback = 'images/tortoise_round_front.jpg') {
+  const clean = String(url || fallback || '').trim();
+  if (!clean) return `/${fallback}`;
+  if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('/')) {
+    return clean;
+  }
+  return `/${clean}`;
+}
+
 const OptiiApp = {
   // Reactive State
   state: {
     category: 'all',
     filters: {
       shape: '',
+      brand: '',
       gender: '',
       fit: '',
       material: '',
       color: '',
+      availability: '',
       min_price: '',
       max_price: '',
       sort: 'default',
       search: ''
     },
     shapes: [],
+    brands: [],
     categories: [],
     products: [],
     cart: JSON.parse(localStorage.getItem('optii_cart') || '[]'),
@@ -37,12 +49,15 @@ const OptiiApp = {
       this.hydrateStateFromUrl();
       this.renderShapesShowcase();
       this.renderFilterShapes();
+      this.renderFilterBrands();
       this.loadProducts({ skipUrlSync: true });
     });
 
     try {
       await Promise.all([
+        OptiiAPI.hydrateStorefrontBranding(),
         this.loadShapes(),
+        this.loadBrands(),
         this.loadCategories(),
         this.loadProducts({ skipUrlSync: true })
       ]);
@@ -60,10 +75,12 @@ const OptiiApp = {
     this.state.category = params.get('category') || 'all';
     this.state.filters = {
       shape: params.get('shape') || '',
+      brand: params.get('brand') || '',
       gender: params.get('gender') || '',
       fit: params.get('fit') || '',
       material: params.get('material') || '',
       color: params.get('color') || '',
+      availability: params.get('availability') || '',
       min_price: params.get('min_price') || '',
       max_price: params.get('max_price') || '',
       sort: params.get('sort') || 'default',
@@ -215,7 +232,7 @@ const OptiiApp = {
     if (item) item.classList.toggle('open');
   },
 
-  // 4. Data Loading: Shapes, Categories, Products
+  // 4. Data Loading: Shapes, Brands, Categories, Products
   async loadShapes() {
     try {
       const data = await OptiiAPI.getShapes();
@@ -227,13 +244,69 @@ const OptiiApp = {
     }
   },
 
+  async loadBrands() {
+    try {
+      const data = await OptiiAPI.getBrands();
+      this.state.brands = data.brands || [];
+      this.renderFilterBrands();
+    } catch (err) {
+      console.warn('Could not load brands:', err);
+    }
+  },
+
   async loadCategories() {
     try {
       const data = await OptiiAPI.getCategories();
       this.state.categories = data.categories || [];
+      this.renderDynamicNavCategories();
     } catch (err) {
       console.warn('Could not load categories:', err);
     }
+  },
+
+  renderDynamicNavCategories() {
+    const navDesktop = document.querySelector('.nav-links-desktop');
+    const excludedHeaderSlugs = new Set(['men-sunglasses', 'women-sunglasses', 'men', 'women']);
+    const topCategories = (this.state.categories || []).filter(cat => !excludedHeaderSlugs.has(String(cat.slug || '').toLowerCase()));
+    if (navDesktop && topCategories.length > 0) {
+      navDesktop.innerHTML = `
+        <a class="nav-item ${this.state.category === 'all' ? 'active' : ''}" href="#all" onclick="event.preventDefault(); OptiiApp.selectCategoryFilter('all');">All</a>
+      ` + topCategories.slice(0, 6).map(cat => `
+        <a class="nav-item ${this.state.category === cat.slug || this.state.category === cat.category_type ? 'active' : ''}"
+           href="#${cat.slug}"
+           onclick="event.preventDefault(); OptiiApp.selectCategoryFilter('${cat.slug}');">${cat.name}</a>
+      `).join('');
+    }
+  },
+
+  selectCategoryFilter(catSlug) {
+    this.state.category = catSlug;
+    this.renderDynamicNavCategories();
+    this.loadProducts();
+  },
+
+  renderFilterBrands() {
+    const container = document.getElementById('filter-brands-grid');
+    if (!container) return;
+    container.innerHTML = this.state.brands.map(b => `
+      <button type="button"
+              class="filter-pill-chip filter-brand-chip ${this.state.filters.brand === b.slug ? 'active' : ''}"
+              data-brand="${b.slug}"
+              onclick="OptiiApp.setBrandFilter('${b.slug}')">${b.name}</button>
+    `).join('');
+  },
+
+  setBrandFilter(brandSlug) {
+    this.state.filters.brand = (this.state.filters.brand === brandSlug) ? '' : brandSlug;
+    this.renderFilterBrands();
+    this.previewFilterResultsCount();
+  },
+
+  setAvailabilityFilter(mode) {
+    this.state.filters.availability = (this.state.filters.availability === mode) ? '' : mode;
+    const chip = document.getElementById('filter-availability-chip');
+    if (chip) chip.classList.toggle('active', this.state.filters.availability === 'in_stock');
+    this.previewFilterResultsCount();
   },
 
   async loadProducts(options = {}) {
@@ -319,8 +392,8 @@ const OptiiApp = {
       const isWishlisted = this.state.wishlist.includes(p.slug);
       const defaultVariant = p.default_variant || (p.variants && p.variants[0]) || {};
       const activeColor = defaultVariant.color_name || 'Standard';
-      const primaryImg = defaultVariant.primary_image || 'images/tortoise_round_front.jpg';
-      const hoverImg = defaultVariant.hover_image || primaryImg;
+      const primaryImg = resolveStoreImgSrc(defaultVariant.primary_image, 'images/tortoise_round_front.jpg');
+      const hoverImg = resolveStoreImgSrc(defaultVariant.hover_image || defaultVariant.primary_image, 'images/tortoise_round_front.jpg');
       const priceFormatted = `₹${Number(p.display_price_inr).toLocaleString('en-IN')}`;
       const brandName = (p.brand_name || 'Optii Atelier').toUpperCase();
       const dims = `${p.lens_width_mm || 51}-${p.bridge_width_mm || 20}-${p.temple_length_mm || 150} mm`;
@@ -387,8 +460,8 @@ const OptiiApp = {
       const modelImg = card.querySelector(`#card-img-model-${productId}`);
       const colorLabel = card.querySelector(`#card-color-label-${productId}`);
 
-      if (studioImg) studioImg.src = variant.primary_image;
-      if (modelImg) modelImg.src = variant.hover_image;
+      if (studioImg) studioImg.src = resolveStoreImgSrc(variant.primary_image, 'images/tortoise_round_front.jpg');
+      if (modelImg) modelImg.src = resolveStoreImgSrc(variant.hover_image || variant.primary_image, 'images/tortoise_round_front.jpg');
       if (colorLabel) colorLabel.textContent = variant.color_name;
     }
   },
@@ -453,10 +526,12 @@ const OptiiApp = {
   clearFilters() {
     this.state.filters = {
       shape: '',
+      brand: '',
       gender: '',
       fit: '',
       material: '',
       color: '',
+      availability: '',
       min_price: '',
       max_price: '',
       sort: 'default',
@@ -464,6 +539,7 @@ const OptiiApp = {
     };
     document.querySelectorAll('.filter-shape-chip, .filter-pill-chip').forEach(el => el.classList.remove('active'));
     this.renderShapesShowcase();
+    this.renderFilterBrands();
     this.toggleFilterDrawer(false);
     this.loadProducts();
   },
@@ -706,15 +782,18 @@ const OptiiApp = {
       const modalBox = document.querySelector('#appointment-modal .modal-box-card');
       if (modalBox) {
         const cleanPhone = phone.replace(/[^0-9]/g, '');
+        const storeCfg = window.__OPTII_STORE_SETTINGS__?.store || {};
+        const storeName = storeCfg.name || res.appointment.store_name || 'Vision Opticals';
+        const businessWa = String(storeCfg.whatsapp_number || storeCfg.phone || '919486552324').replace(/[^0-9]/g, '');
         const waText = encodeURIComponent(
-          `*Vision Opticals — Eye Test Appointment Confirmation*\n` +
+          `*${storeName} — Eye Test Appointment Confirmation*\n` +
           `• Appointment: ${res.appointment.appointment_number}\n` +
           `• Date & Time: ${date} at ${time}\n` +
           `• Patient: ${name} (${cleanPhone})\n` +
           `• Clinic: ${res.appointment.store_name} (${res.appointment.store_address})\n` +
-          `_Hello Vision Opticals Optometrist, I have booked an in-store eye test appointment._`
+          `_Hello ${storeName} Optometrist, I have booked an in-store eye test appointment._`
         );
-        const waUrl = `https://wa.me/919486552324?text=${waText}`;
+        const waUrl = `https://wa.me/${businessWa}?text=${waText}`;
 
         modalBox.innerHTML = `
           <div class="drawer-header">

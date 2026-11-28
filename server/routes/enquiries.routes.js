@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const config = require('../config');
+const { authenticateToken } = require('../middleware/auth');
+const { getPublicStoreSettings } = require('../services/storeSettingsService');
 
 // POST /api/enquiries/whatsapp - Log customer WhatsApp enquiry & generate prefilled deep-link
 router.post('/whatsapp', async (req, res) => {
@@ -27,10 +28,13 @@ router.post('/whatsapp', async (req, res) => {
 
     let lines = [];
 
+    const { store } = await getPublicStoreSettings();
+    const storeName = store.name || 'Vision Opticals';
+
     // Support both Multi-Item Shopping Bag Inquiries and Single Frame Inquiries
     if (items && Array.isArray(items) && items.length > 0) {
       lines = [
-        `*Vision Opticals — Shopping Bag Inquiry*`,
+        `*${storeName} — Shopping Bag Inquiry*`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `• *Patron:* ${customer_name || 'Guest Patron'}`,
         customer_phone ? `• *Phone:* ${customer_phone}` : null,
@@ -48,10 +52,10 @@ router.post('/whatsapp', async (req, res) => {
 
       lines.push(`━━━━━━━━━━━━━━━━━━━━`);
       lines.push(`• *Estimated Bag Total:* ₹${Number(price || 0).toLocaleString('en-IN')}`);
-      lines.push(`_Hello Vision Opticals, I would like to inquire about stock availability & placing this order via WhatsApp._`);
+      lines.push(`_Hello ${storeName}, I would like to inquire about stock availability & placing this order via WhatsApp._`);
     } else {
       lines = [
-        `*Vision Opticals Order Inquiry*`,
+        `*${storeName} Order Inquiry*`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `• *Frame:* ${product_name || 'Optical Frame'} (${sku || 'N/A'})`,
         `• *Colorway:* ${color}`,
@@ -66,7 +70,7 @@ router.post('/whatsapp', async (req, res) => {
     }
 
     const prefilledText = lines.join('\n');
-    const cleanPhone = config.WHATSAPP_PHONE.replace(/[^0-9]/g, '');
+    const cleanPhone = String(store.whatsapp_number || store.phone || '+919486552324').replace(/[^0-9]/g, '');
     const encodedText = encodeURIComponent(prefilledText);
     const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
 
@@ -109,8 +113,8 @@ router.post('/whatsapp', async (req, res) => {
   }
 });
 
-// GET /api/enquiries - List inquiries (Protected)
-router.get('/', async (req, res) => {
+// GET /api/enquiries - List inquiries (Protected Staff/Admin)
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const enquiries = await db.all('SELECT * FROM customer_enquiries ORDER BY created_at DESC');
     res.json({ success: true, count: enquiries.length, enquiries });

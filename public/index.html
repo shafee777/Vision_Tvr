@@ -118,7 +118,7 @@
 
   <!-- 1. TOP PROMOTIONAL ANNOUNCEMENT BAR (36PX) -->
   <aside class="announcement-bar" id="announcement-bar">
-    <span>50% off on any second pair of frames & lenses</span>
+    <span data-announcement-text>50% off on any second pair of frames &amp; lenses</span>
     <a class="announcement-link" onclick="OptiiApp.filterByShape(''); window.scrollTo({top: 450, behavior: 'smooth'})">Shop Collection →</a>
   </aside>
 
@@ -129,8 +129,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
 
-      <a href="/" class="brand-logo" onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'})">
-        Vision <span>OPTICALS</span>
+      <a href="/" class="brand-logo" data-store-logo-slot onclick="event.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'})">
+        <span data-store-name>Vision Opticals</span>
       </a>
 
       <nav class="nav-links-desktop">
@@ -313,6 +313,22 @@
         </div>
       </div>
 
+      <!-- Brands (Dynamic from /api/brands) -->
+      <div>
+        <div class="filter-group-title">Brand</div>
+        <div class="filter-chips-wrap" id="filter-brands-grid">
+          <!-- Injected dynamically from /api/brands -->
+        </div>
+      </div>
+
+      <!-- Availability -->
+      <div>
+        <div class="filter-group-title">Availability</div>
+        <div class="filter-chips-wrap">
+          <button class="filter-pill-chip" id="filter-availability-chip" onclick="OptiiApp.setAvailabilityFilter('in_stock')">In Stock Only</button>
+        </div>
+      </div>
+
       <!-- Frame Width / Fit -->
       <div>
         <div class="filter-group-title">Frame Fit</div>
@@ -459,7 +475,7 @@
       <form style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;" onsubmit="OptiiApp.submitAppointment(event)">
         <div>
           <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Branch Location</label>
-          <div style="font-size: 14px; font-weight: 500; color: var(--color-ink);">Vision Opticals — 12 Kamalalayam West Bank, Thiruvarur</div>
+          <div style="font-size: 14px; font-weight: 500; color: var(--color-ink);"><span data-store-name>Vision Opticals</span> — <span data-store-address>12 Kamalalayam West Bank, Thiruvarur</span></div>
         </div>
 
         <div>
@@ -540,30 +556,35 @@
   <footer class="site-footer">
     <div class="footer-top-grid">
       <div class="footer-brand-col">
-        <a href="/" class="brand-logo">Vision <span>OPTICALS</span></a>
-        <p class="footer-tagline">Architectural optical retail store. Handcrafted bio-acetates, titanium wireframes and precision optometry eye testing.</p>
-        <a class="whatsapp-direct-badge" href="https://wa.me/919486552324" target="_blank">
-          <span></span> WhatsApp Concierge: +91 94865 52324
+        <a href="/" class="brand-logo" data-store-logo-slot><span data-store-name>Vision Opticals</span></a>
+        <p class="footer-tagline" data-store-desc>Architectural optical retail store. Handcrafted bio-acetates, titanium wireframes and precision optometry eye testing.</p>
+        <a class="whatsapp-direct-badge" data-store-whatsapp-link href="https://wa.me/919486552324" target="_blank">
+          <span></span> <span data-store-whatsapp-label>WhatsApp Concierge: +91 94865 52324</span>
         </a>
+        <div class="footer-social-links">
+          <a href="#map" data-store-map-link target="_blank" rel="noopener noreferrer" style="display:none;">Google Maps</a>
+          <a href="#instagram" data-store-instagram target="_blank" rel="noopener noreferrer" style="display:none;">Instagram</a>
+          <a href="#facebook" data-store-facebook target="_blank" rel="noopener noreferrer" style="display:none;">Facebook</a>
+        </div>
       </div>
 
       <div>
         <div class="footer-col-title">Collections</div>
         <div class="footer-links-list">
-          <a class="footer-link" href="#glasses" onclick="OptiiApp.state.category='glasses'; OptiiApp.loadProducts();">All Glasses</a>
-          <a class="footer-link" href="#sunglasses" onclick="OptiiApp.state.category='sunglasses'; OptiiApp.loadProducts();">Sunglasses</a>
-          <a class="footer-link" href="#accessories" onclick="OptiiApp.state.category='accessories'; OptiiApp.loadProducts();">Accessories</a>
-          <a class="footer-link" href="#contact-lenses" onclick="OptiiApp.state.category='contact_lenses'; OptiiApp.loadProducts();">Contact Lenses</a>
+          <a class="footer-link" href="#glasses" onclick="OptiiApp.selectCategoryFilter('glasses');">All Glasses</a>
+          <a class="footer-link" href="#sunglasses" onclick="OptiiApp.selectCategoryFilter('sunglasses');">Sunglasses</a>
+          <a class="footer-link" href="#accessories" onclick="OptiiApp.selectCategoryFilter('accessories');">Accessories</a>
+          <a class="footer-link" href="#contact-lenses" onclick="OptiiApp.selectCategoryFilter('contact_lenses');">Contact Lenses</a>
         </div>
       </div>
 
       <div>
-        <div class="footer-col-title">Clinic & Care</div>
+        <div class="footer-col-title">Clinic &amp; Care</div>
         <div class="footer-links-list">
           <a class="footer-link" href="#book" onclick="OptiiApp.openAppointmentModal()">Book Eye Test</a>
-          <a class="footer-link" href="#hours">Store Hours: Mon–Sat 10:00–20:00</a>
-          <a class="footer-link" href="#address">12 Kamalalayam West, Thiruvarur</a>
-          <a class="footer-link" href="/admin">Staff & Doctor Login</a>
+          <a class="footer-link" href="#hours" data-store-hours>Store Hours: Mon–Sat 10:00–20:00</a>
+          <a class="footer-link" href="#address" data-store-address>12 Kamalalayam West, Thiruvarur</a>
+          <a class="footer-link" href="mailto:care@optii.in" data-store-email>care@optii.in</a>
         </div>
       </div>
 
@@ -580,8 +601,8 @@
     </div>
 
     <div class="footer-bottom-strip">
-      <div>© 2026 Vision Opticals. All rights reserved.</div>
-      <div>Precision Optics · Thiruvarur Store · ISO 9001 Certified Clinic</div>
+      <div>© 2026 <span data-store-name>Vision Opticals</span>. All rights reserved.</div>
+      <div><span data-store-name>Vision Opticals</span> · <span data-store-address>Thiruvarur</span></div>
     </div>
   </footer>
 

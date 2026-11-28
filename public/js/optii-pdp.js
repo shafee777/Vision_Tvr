@@ -3,6 +3,15 @@
  * Inspired by Ace & Tate European Optical Retail Standards
  */
 
+function resolveImgSrc(url, fallback = 'images/tortoise_round_front.jpg') {
+  const clean = String(url || fallback || '').trim();
+  if (!clean) return `/${fallback}`;
+  if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:') || clean.startsWith('/')) {
+    return clean;
+  }
+  return `/${clean}`;
+}
+
 const OptiiPDP = {
   state: {
     slug: 'henry-round-acetate',
@@ -11,6 +20,7 @@ const OptiiPDP = {
     selectedImageIndex: 0,
     lenses: {
       usages: [],
+      prescriptionOptions: [],
       thicknesses: [],
       coatings: []
     },
@@ -42,6 +52,7 @@ const OptiiPDP = {
       pricing: {
         frame_base_inr: 0,
         lens_usage_inr: 0,
+        lens_prescription_inr: 0,
         lens_thickness_inr: 0,
         lens_coating_inr: 0,
         total_lenses_inr: 0,
@@ -55,8 +66,6 @@ const OptiiPDP = {
   // 1. Initialization
   async init() {
     console.log('[Optii PDP] Initializing product detail view...');
-    
-    // Parse slug from URL: /product/:slug or ?slug=...
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const slugIndex = pathParts.indexOf('product');
     if (slugIndex !== -1 && pathParts[slugIndex + 1]) {
@@ -70,10 +79,12 @@ const OptiiPDP = {
 
     this.populateRxRanges();
     this.bindGlobalEvents();
+    this.bindRxDropzone();
     this.updateBadges();
 
     try {
       await Promise.all([
+        OptiiAPI.hydrateStorefrontBranding(),
         this.loadProduct(this.state.slug),
         this.loadLensHierarchy()
       ]);
@@ -91,7 +102,7 @@ const OptiiPDP = {
         document.getElementById('pdp-main-content').innerHTML = `
           <div style="text-align: center; padding: 6rem 1rem;">
             <h2>Optical Frame Not Found</h2>
-            <p style="color: var(--color-ink-muted); margin: 1rem 0 2rem;">The requested frame silhouette could not be located in our atelier collection.</p>
+            <p style="color: var(--color-ink-muted); margin: 1rem 0 2rem;">The requested frame silhouette could not be located in our collection.</p>
             <a href="/" class="btn-pill-primary" style="background: #000; color: #fff;">Return to Collections</a>
           </div>
         `;
@@ -100,18 +111,20 @@ const OptiiPDP = {
 
       this.state.product = res.product;
       this.state.selectedVariant = res.product.variants.find(v => v.is_default) || res.product.variants[0];
+      this.state.selectedImageIndex = 0;
       this.renderProduct();
     } catch (err) {
       console.error('Failed to load product payload:', err);
     }
   },
 
-  // 3. Load Lens Options (Steps 1, 3, 4)
+  // 3. Load Lens Options (Steps 1, 2, 3, 4)
   async loadLensHierarchy() {
     try {
       const res = await OptiiAPI.getLenses();
       if (res && res.success && res.steps) {
         this.state.lenses.usages = res.steps.step1_usages || [];
+        this.state.lenses.prescriptionOptions = res.steps.step2_prescription_options || [];
         this.state.lenses.thicknesses = res.steps.step3_thicknesses || [];
         this.state.lenses.coatings = res.steps.step4_coatings || [];
       }
@@ -200,25 +213,78 @@ const OptiiPDP = {
     this.renderRelatedProducts();
   },
 
-  // 5. Render Multi-Image Gallery
+  // 5. Render Interactive Multi-Image Gallery
+  getVariantGalleryImages(v = this.state.selectedVariant) {
+    if (!v) return [];
+    if (v.images && v.images.length > 0) return v.images;
+    const list = [];
+    if (v.primary_image) list.push({ image_url: v.primary_image, image_type: 'studio_front' });
+    if (v.hover_image && v.hover_image !== v.primary_image) list.push({ image_url: v.hover_image, image_type: 'model_on_face' });
+    if (list.length === 0) list.push({ image_url: 'images/tortoise_round_front.jpg', image_type: 'studio_front' });
+    return list;
+  },
+
   renderGallery() {
-    const galleryGrid = document.getElementById('pdp-gallery-grid');
     const v = this.state.selectedVariant;
-    if (!galleryGrid || !v) return;
+    if (!v) return;
+    const images = this.getVariantGalleryImages(v);
+    if (this.state.selectedImageIndex >= images.length) {
+      this.state.selectedImageIndex = 0;
+    }
 
-    const images = (v.images && v.images.length > 0) ? v.images : [
-      { image_url: v.primary_image || 'images/tortoise_round_front.jpg', image_type: 'studio_front' },
-      { image_url: v.hover_image || 'images/tortoise_round_angle.jpg', image_type: 'model_on_face' }
-    ];
+    const activeIdx = this.state.selectedImageIndex;
+    const activeImg = images[activeIdx] || images[0];
+    const mainImgEl = document.getElementById('pdp-main-stage-img');
+    const counterEl = document.getElementById('pdp-gallery-counter');
+    const prevBtn = document.getElementById('pdp-gallery-prev');
+    const nextBtn = document.getElementById('pdp-gallery-next');
+    const thumbsEl = document.getElementById('pdp-thumbs-strip');
 
-    galleryGrid.innerHTML = images.map((img, idx) => `
-      <div class="pdp-gallery-item ${idx === 0 ? 'featured-hero' : ''}" onclick="OptiiPDP.openZoomModal(${idx})">
-        <img src="/${img.image_url}" alt="${this.state.product.name} — ${img.image_type}" loading="${idx === 0 ? 'eager' : 'lazy'}" />
-        <div class="pdp-zoom-indicator">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        </div>
-      </div>
-    `).join('');
+    if (mainImgEl) {
+      const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const nextSrc = resolveImgSrc(activeImg.image_url);
+      if (mainImgEl.dataset.currentSrc !== nextSrc && !reducedMotion && mainImgEl.dataset.currentSrc) {
+        mainImgEl.classList.add('is-transitioning');
+        setTimeout(() => {
+          mainImgEl.src = nextSrc;
+          mainImgEl.alt = `${this.state.product?.name || 'Frame'} — ${activeImg.image_type || 'view'}`;
+          mainImgEl.dataset.currentSrc = nextSrc;
+          mainImgEl.classList.remove('is-transitioning');
+        }, 120);
+      } else {
+        mainImgEl.src = nextSrc;
+        mainImgEl.alt = `${this.state.product?.name || 'Frame'} — ${activeImg.image_type || 'view'}`;
+        mainImgEl.dataset.currentSrc = nextSrc;
+      }
+    }
+
+    if (counterEl) {
+      counterEl.textContent = `${activeIdx + 1} / ${images.length}`;
+    }
+    if (prevBtn) prevBtn.style.display = images.length > 1 ? 'flex' : 'none';
+    if (nextBtn) nextBtn.style.display = images.length > 1 ? 'flex' : 'none';
+
+    if (thumbsEl) {
+      thumbsEl.innerHTML = images.map((img, idx) => `
+        <button type="button"
+                class="pdp-thumb-btn ${idx === activeIdx ? 'active' : ''}"
+                onclick="OptiiPDP.selectImageIndex(${idx})"
+                aria-label="View image ${idx + 1} of ${images.length}">
+          <img src="${resolveImgSrc(img.image_url)}" alt="${this.state.product?.name || 'Frame'} thumbnail ${idx + 1}" loading="lazy" />
+        </button>
+      `).join('');
+    }
+  },
+
+  selectImageIndex(idx) {
+    const images = this.getVariantGalleryImages();
+    if (!images.length) return;
+    this.state.selectedImageIndex = ((idx % images.length) + images.length) % images.length;
+    this.renderGallery();
+  },
+
+  stepGallery(delta) {
+    this.selectImageIndex(this.state.selectedImageIndex + delta);
   },
 
   // 6. Select Colorway Variant
@@ -227,24 +293,34 @@ const OptiiPDP = {
     if (!variant) return;
 
     this.state.selectedVariant = variant;
+    this.state.selectedImageIndex = 0;
     this.renderProduct();
   },
 
   // 7. Fullscreen Zoom Modal
   openZoomModal(imageIndex = 0) {
-    const v = this.state.selectedVariant;
-    if (!v) return;
+    const images = this.getVariantGalleryImages();
+    if (!images.length) return;
 
-    const images = v.images && v.images.length ? v.images : [{ image_url: v.primary_image }];
-    const targetImg = images[imageIndex] || images[0];
+    const safeIndex = Math.max(0, Math.min(imageIndex, images.length - 1));
+    this.state.selectedImageIndex = safeIndex;
+    const targetImg = images[safeIndex] || images[0];
 
     const modal = document.getElementById('fullscreen-zoom-modal');
     const imgEl = document.getElementById('fullscreen-zoom-img');
 
     if (modal && imgEl) {
-      imgEl.src = `/${targetImg.image_url}`;
+      imgEl.src = resolveImgSrc(targetImg.image_url);
       modal.classList.add('active');
     }
+  },
+
+  stepZoomModal(delta) {
+    const images = this.getVariantGalleryImages();
+    if (!images.length) return;
+    const next = ((this.state.selectedImageIndex + delta) % images.length + images.length) % images.length;
+    this.openZoomModal(next);
+    this.renderGallery();
   },
 
   closeZoomModal() {
@@ -264,7 +340,7 @@ const OptiiPDP = {
       return `
         <div class="product-card" onclick="window.location.href='/product/${rel.slug}'">
           <div class="product-card-media">
-            <img class="product-img-studio" src="/${rel.primary_image}" alt="${rel.name}" loading="lazy" />
+            <img class="product-img-studio" src="${resolveImgSrc(rel.primary_image)}" alt="${rel.name}" loading="lazy" />
           </div>
           <div class="product-card-info">
             <div class="product-card-meta-top">
@@ -303,18 +379,29 @@ const OptiiPDP = {
   openConfigurator() {
     this.state.configurator.isOpen = true;
     this.state.configurator.currentStep = 1;
-    
-    // Set default usage if not selected
+
     if (!this.state.configurator.usage && this.state.lenses.usages.length > 0) {
       this.state.configurator.usage = this.state.lenses.usages[0];
     }
-    // Set default thickness (1.50 Standard)
     if (!this.state.configurator.thickness && this.state.lenses.thicknesses.length > 0) {
       this.state.configurator.thickness = this.state.lenses.thicknesses[0];
     }
-    // Set default coating (Anti-Reflective)
     if (!this.state.configurator.coating && this.state.lenses.coatings.length > 0) {
       this.state.configurator.coating = this.state.lenses.coatings[0];
+    }
+
+    const p = this.state.product;
+    const v = this.state.selectedVariant || (p && p.variants && p.variants[0]);
+    const frameLabelEl = document.getElementById('cfg-frame-label');
+    const framePriceEl = document.getElementById('cfg-frame-price');
+    if (p && v) {
+      const fPrice = v.price_override_inr || p.base_price_inr || 0;
+      if (frameLabelEl) {
+        frameLabelEl.textContent = `${p.name} (${v.color_name || 'Standard'}) · ${p.dimensions?.display_string || ''}`;
+      }
+      if (framePriceEl) {
+        framePriceEl.textContent = `Frame: ₹${Number(fPrice).toLocaleString('en-IN')}`;
+      }
     }
 
     const modal = document.getElementById('configurator-modal');
@@ -332,10 +419,20 @@ const OptiiPDP = {
 
   goToStep(stepNumber) {
     if (stepNumber < 1 || stepNumber > 4) return;
-    
-    // If navigating from step 2, validate prescription
-    if (this.state.configurator.currentStep === 2 && stepNumber > 2) {
-      if (!this.validateStep2Prescription()) return;
+    const cur = this.state.configurator.currentStep;
+
+    if (stepNumber > cur) {
+      if (!this.state.configurator.usage) {
+        alert('Please choose a lens usage type before proceeding.');
+        return;
+      }
+      if (cur <= 2 && stepNumber > 2) {
+        if (!this.validateStep2Prescription()) return;
+      }
+      if (cur <= 3 && stepNumber > 3 && !this.state.configurator.thickness) {
+        alert('Please select a lens thickness before proceeding.');
+        return;
+      }
     }
 
     this.state.configurator.currentStep = stepNumber;
@@ -345,26 +442,25 @@ const OptiiPDP = {
   renderConfiguratorStep() {
     const step = this.state.configurator.currentStep;
 
-    // Update Progress Bar
     document.querySelectorAll('.step-indicator').forEach(el => {
       const s = Number(el.dataset.step);
       el.classList.toggle('active', s === step);
       el.classList.toggle('completed', s < step);
     });
 
-    // Toggle Step Panes
     document.querySelectorAll('.config-step-pane').forEach(el => {
       const s = Number(el.dataset.step);
       el.classList.toggle('active', s === step);
     });
 
-    // Render Step specific content
     if (step === 1) this.renderStep1Usage();
     if (step === 2) this.renderStep2Prescription();
     if (step === 3) this.renderStep3Thickness();
-    if (step === 4) this.renderStep4Coatings();
+    if (step === 4) {
+      this.renderStep4Coatings();
+      this.renderFinalOrderSummary();
+    }
 
-    // Footer Next / Finish Button
     const btnNext = document.getElementById('btn-config-next');
     if (btnNext) {
       if (step === 4) {
@@ -388,6 +484,11 @@ const OptiiPDP = {
     if (!grid) return;
 
     const usages = this.state.lenses.usages;
+    if (!usages.length) {
+      grid.innerHTML = '<div style="padding:1.5rem;color:var(--color-ink-muted);">Unable to load lens usages. Please refresh and try again.</div>';
+      return;
+    }
+
     grid.innerHTML = usages.map(u => {
       const isSelected = this.state.configurator.usage && this.state.configurator.usage.id === u.id;
       const priceText = u.base_price_inr > 0 ? `+₹${Number(u.base_price_inr).toLocaleString('en-IN')}` : 'Included';
@@ -412,19 +513,67 @@ const OptiiPDP = {
     this.calculatePricing();
   },
 
-  // Step 2: Render Prescription Entry
+  // Step 2: Render Prescription Entry (Dynamic Admin Step 2 Options)
   renderStep2Prescription() {
-    // Show/hide ADD column in manual table based on Progressive selection
     const isProgressive = this.state.configurator.usage && this.state.configurator.usage.slug.includes('progressive');
     const addHeaders = document.querySelectorAll('.rx-add-col');
     addHeaders.forEach(el => el.style.display = isProgressive ? 'table-cell' : 'none');
+
+    const opts = this.state.lenses.prescriptionOptions || [];
+    if (opts.length > 0) {
+      document.querySelectorAll('.rx-tab-btn').forEach(btn => {
+        const key = btn.dataset.method;
+        const matched = opts.find(o => o.method_key === key);
+        if (matched) {
+          btn.style.display = '';
+          const feeLabel = Number(matched.fee_inr || 0) > 0 ? ` (+₹${Number(matched.fee_inr).toLocaleString('en-IN')})` : '';
+          if (key === 'upload') btn.textContent = `Upload Prescription (PDF/Photo)${feeLabel}`;
+          if (key === 'manual') btn.textContent = `Enter Manually${feeLabel}`;
+          if (key === 'later') btn.textContent = `Send Later via WhatsApp${feeLabel}`;
+        } else {
+          btn.style.display = 'none';
+        }
+      });
+    }
 
     this.updateRxTabs();
   },
 
   switchRxMethod(method) {
+    if (method !== 'upload' && this.state.configurator.prescription.token) {
+      this.state.configurator.prescription.token = null;
+      this.state.configurator.prescription.filename = null;
+      const statusBox = document.getElementById('rx-upload-status');
+      if (statusBox) statusBox.innerHTML = '';
+      const fileInput = document.getElementById('rx-file-input');
+      if (fileInput) fileInput.value = '';
+    }
     this.state.configurator.prescription.method = method;
     this.updateRxTabs();
+    this.calculatePricing();
+  },
+
+  bindRxDropzone() {
+    const dropzone = document.getElementById('rx-dropzone');
+    if (!dropzone || dropzone.dataset.dndBound) return;
+    dropzone.dataset.dndBound = '1';
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = 'var(--color-ink)';
+      dropzone.style.background = 'var(--color-surface-subtle)';
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.style.borderColor = '';
+      dropzone.style.background = '';
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.style.borderColor = '';
+      dropzone.style.background = '';
+      if (e.dataTransfer?.files?.[0]) {
+        this.handlePrescriptionUpload(e.dataTransfer.files[0]);
+      }
+    });
   },
 
   updateRxTabs() {
@@ -456,7 +605,6 @@ const OptiiPDP = {
       return;
     }
 
-    const dropzone = document.getElementById('rx-dropzone');
     const statusBox = document.getElementById('rx-upload-status');
     if (statusBox) statusBox.innerHTML = 'Uploading and securing optical document...';
 
@@ -497,7 +645,16 @@ const OptiiPDP = {
     }
   },
 
-  removeUploadedPrescription() {
+  async removeUploadedPrescription() {
+    const token = this.state.configurator.prescription.token;
+    if (token) {
+      try {
+        await fetch(`/api/prescriptions/${encodeURIComponent(token)}`, {
+          method: 'DELETE',
+          headers: { 'x-prescription-token': token }
+        });
+      } catch (_) {}
+    }
     this.state.configurator.prescription.token = null;
     this.state.configurator.prescription.filename = null;
     const statusBox = document.getElementById('rx-upload-status');
@@ -508,8 +665,6 @@ const OptiiPDP = {
 
   validateStep2Prescription() {
     const rx = this.state.configurator.prescription;
-    
-    // If zero power fashion frame, skip validation
     if (this.state.configurator.usage && this.state.configurator.usage.slug === 'fashion-zero-power') {
       return true;
     }
@@ -523,33 +678,42 @@ const OptiiPDP = {
     }
 
     if (rx.method === 'manual') {
-      // Validate Cylinder requires Axis
+      const manualOpt = (this.state.lenses.prescriptionOptions || []).find(o => o.method_key === 'manual');
+      const pdMin = manualOpt ? Number(manualOpt.pd_min || 50) : 50;
+      const pdMax = manualOpt ? Number(manualOpt.pd_max || 75) : 75;
+
       const odCyl = parseFloat(document.getElementById('rx-od-cyl')?.value || 0);
       const odAxis = document.getElementById('rx-od-axis')?.value;
       const osCyl = parseFloat(document.getElementById('rx-os-cyl')?.value || 0);
       const osAxis = document.getElementById('rx-os-axis')?.value;
+      const pdVal = Number(document.getElementById('rx-pd-single')?.value || 63);
 
-      if (odCyl !== 0 && (!odAxis || isNaN(odAxis) || odAxis < 1 || odAxis > 180)) {
+      if (odCyl !== 0 && (!odAxis || isNaN(odAxis) || Number(odAxis) < 1 || Number(odAxis) > 180)) {
         alert('Right Eye (OD) Cylinder requires an Axis between 1° and 180°.');
         return false;
       }
-      if (osCyl !== 0 && (!osAxis || isNaN(osAxis) || osAxis < 1 || osAxis > 180)) {
+      if (osCyl !== 0 && (!osAxis || isNaN(osAxis) || Number(osAxis) < 1 || Number(osAxis) > 180)) {
         alert('Left Eye (OS) Cylinder requires an Axis between 1° and 180°.');
         return false;
       }
+      if (Number.isNaN(pdVal) || pdVal < pdMin || pdVal > pdMax) {
+        alert(`Pupillary Distance (PD) must be between ${pdMin} mm and ${pdMax} mm.`);
+        return false;
+      }
 
-      // Record manual parameters
       rx.manual.od_sph = document.getElementById('rx-od-sph')?.value || '0.00';
       rx.manual.od_cyl = document.getElementById('rx-od-cyl')?.value || '0.00';
-      rx.manual.od_axis = odAxis;
+      rx.manual.od_axis = odAxis || '';
+      rx.manual.od_add = document.getElementById('rx-od-add')?.value || '';
       rx.manual.os_sph = document.getElementById('rx-os-sph')?.value || '0.00';
       rx.manual.os_cyl = document.getElementById('rx-os-cyl')?.value || '0.00';
-      rx.manual.os_axis = osAxis;
-      rx.manual.pd_single = document.getElementById('rx-pd-single')?.value || '63';
+      rx.manual.os_axis = osAxis || '';
+      rx.manual.os_add = document.getElementById('rx-os-add')?.value || '';
+      rx.manual.pd_single = String(pdVal);
       return true;
     }
 
-    return true; // 'later'
+    return true;
   },
 
   // Step 3: Render Lens Thickness
@@ -557,23 +721,28 @@ const OptiiPDP = {
     const grid = document.getElementById('config-thickness-grid');
     if (!grid) return;
 
-    // Smart recommendations based on entered SPH
-    const sph = Math.min(
-      Math.abs(parseFloat(this.state.configurator.prescription.manual.od_sph || 0)),
-      Math.abs(parseFloat(this.state.configurator.prescription.manual.os_sph || 0))
-    );
+    const isManualRx = this.state.configurator.prescription.method === 'manual';
+    const sph = isManualRx
+      ? Math.max(
+          Math.abs(parseFloat(this.state.configurator.prescription.manual.od_sph || 0)),
+          Math.abs(parseFloat(this.state.configurator.prescription.manual.os_sph || 0))
+        )
+      : 0;
 
     const thicknesses = this.state.lenses.thicknesses;
     grid.innerHTML = thicknesses.map(t => {
       const isSelected = this.state.configurator.thickness && this.state.configurator.thickness.id === t.id;
       const priceText = t.price_inr > 0 ? `+₹${Number(t.price_inr).toLocaleString('en-IN')}` : 'Included';
-      
-      // Determine smart badge without claiming medical cert
+
       let isRecommended = false;
-      if (sph < 2.25 && t.index_rating === 1.50) isRecommended = true;
-      else if (sph >= 2.25 && sph < 4.25 && t.index_rating === 1.60) isRecommended = true;
-      else if (sph >= 4.25 && sph < 6.50 && t.index_rating === 1.67) isRecommended = true;
-      else if (sph >= 6.50 && t.index_rating === 1.74) isRecommended = true;
+      if (isManualRx) {
+        if (sph < 2.25 && t.index_rating === 1.50) isRecommended = true;
+        else if (sph >= 2.25 && sph < 4.25 && t.index_rating === 1.60) isRecommended = true;
+        else if (sph >= 4.25 && sph < 6.50 && t.index_rating === 1.67) isRecommended = true;
+        else if (sph >= 6.50 && t.index_rating === 1.74) isRecommended = true;
+      } else if (t.index_rating === 1.50) {
+        isRecommended = true;
+      }
 
       return `
         <div class="lens-option-card ${isSelected ? 'selected' : ''}" onclick="OptiiPDP.selectThickness(${t.id})">
@@ -599,7 +768,7 @@ const OptiiPDP = {
     this.calculatePricing();
   },
 
-  // Step 4: Render Coatings
+  // Step 4: Render Coatings & Order Summary
   renderStep4Coatings() {
     const grid = document.getElementById('config-coatings-grid');
     if (!grid) return;
@@ -620,6 +789,34 @@ const OptiiPDP = {
     }).join('');
   },
 
+  renderFinalOrderSummary() {
+    const box = document.getElementById('config-final-order-summary');
+    if (!box) return;
+    const p = this.state.product;
+    const v = this.state.selectedVariant || (p && p.variants && p.variants[0]);
+    const cfg = this.state.configurator;
+    const rxLabel = cfg.prescription.method === 'upload'
+      ? `Uploaded (${cfg.prescription.filename || 'Document attached'})`
+      : (cfg.prescription.method === 'manual'
+          ? `Manual OD ${cfg.prescription.manual.od_sph} / OS ${cfg.prescription.manual.os_sph} (PD ${cfg.prescription.manual.pd_single}mm)`
+          : 'Provide later via WhatsApp / Store');
+
+    box.innerHTML = `
+      <div style="font-weight:700;margin-bottom:8px;">Final Configuration Summary</div>
+      <div style="display:grid;gap:4px;color:var(--color-ink-secondary);">
+        <div><strong>Frame:</strong> ${p ? p.name : ''} (${v ? v.color_name : ''}) — ₹${Number(cfg.pricing.frame_base_inr || 0).toLocaleString('en-IN')}</div>
+        <div><strong>1. Usage:</strong> ${cfg.usage ? cfg.usage.name : '—'} (+₹${Number(cfg.pricing.lens_usage_inr || 0).toLocaleString('en-IN')})</div>
+        <div><strong>2. Prescription:</strong> ${rxLabel}${Number(cfg.pricing.lens_prescription_inr || 0) > 0 ? ` (+₹${Number(cfg.pricing.lens_prescription_inr).toLocaleString('en-IN')})` : ''}</div>
+        <div><strong>3. Thickness:</strong> ${cfg.thickness ? cfg.thickness.name : '—'} (+₹${Number(cfg.pricing.lens_thickness_inr || 0).toLocaleString('en-IN')})</div>
+        <div><strong>4. Coating:</strong> ${cfg.coating ? cfg.coating.name : '—'} (+₹${Number(cfg.pricing.lens_coating_inr || 0).toLocaleString('en-IN')})</div>
+      </div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border);display:flex;justify-content:space-between;font-weight:700;font-size:15px;">
+        <span>Total Package</span>
+        <span>₹${Number(cfg.pricing.grand_total_inr || 0).toLocaleString('en-IN')}</span>
+      </div>
+    `;
+  },
+
   selectCoating(coatingId) {
     const c = this.state.lenses.coatings.find(item => item.id === coatingId);
     if (!c) return;
@@ -634,29 +831,36 @@ const OptiiPDP = {
     const v = this.state.selectedVariant || (this.state.product && this.state.product.variants[0]);
     const framePrice = v ? (v.price_override_inr || this.state.product.base_price_inr) : 0;
     const usageId = this.state.configurator.usage ? this.state.configurator.usage.id : null;
+    const rxMethod = this.state.configurator.prescription.method;
     const thicknessId = this.state.configurator.thickness ? this.state.configurator.thickness.id : null;
     const coatingId = this.state.configurator.coating ? this.state.configurator.coating.id : null;
 
     try {
       const res = await OptiiAPI.calculateLensPrice({
         frame_price_inr: framePrice,
+        product_id: this.state.product?.id,
+        variant_id: v?.id,
         usage_id: usageId,
+        prescription_method: rxMethod,
         thickness_id: thicknessId,
         coating_id: coatingId
       });
 
       if (res && res.success && res.calculation) {
         this.state.configurator.pricing = res.calculation;
-        
-        // Update footer UI
         const totalEl = document.getElementById('config-total-price-val');
         const breakdownEl = document.getElementById('config-price-breakdown-text');
 
         if (totalEl) totalEl.textContent = `₹${Number(res.calculation.grand_total_inr).toLocaleString('en-IN')}`;
         if (breakdownEl) breakdownEl.textContent = res.calculation.summary_text;
+        if (this.state.configurator.currentStep === 4) {
+          this.renderFinalOrderSummary();
+        }
       }
     } catch (err) {
       console.error('Calculation Error:', err);
+      const breakdownEl = document.getElementById('config-price-breakdown-text');
+      if (breakdownEl) breakdownEl.textContent = 'Pricing unavailable — please retry.';
     }
   },
 
@@ -678,9 +882,13 @@ const OptiiPDP = {
       image_url: v.primary_image,
       dimensions: p.dimensions ? p.dimensions.display_string : '51-20-150 mm',
       frame_price_inr: v.price_override_inr || p.base_price_inr,
+      prescription_token: cfg.prescription.token || null,
       configured_lenses: {
+        usage_id: cfg.usage ? cfg.usage.id : null,
         usage_name: cfg.usage ? cfg.usage.name : 'Single Vision Distance',
+        thickness_id: cfg.thickness ? cfg.thickness.id : null,
         thickness_name: cfg.thickness ? cfg.thickness.name : 'Standard 1.50 Index',
+        coating_id: cfg.coating ? cfg.coating.id : null,
         coating_name: cfg.coating ? cfg.coating.name : 'Clear Anti-Reflective',
         prescription_method: cfg.prescription.method,
         prescription_token: cfg.prescription.token,
@@ -779,6 +987,37 @@ const OptiiPDP = {
       drawer.classList.toggle('active', open);
       backdrop.classList.toggle('active', open);
       if (open) this.renderCart();
+    }
+  },
+
+  toggleWishlistDrawer(open) {
+    const drawer = document.getElementById('wishlist-drawer');
+    const backdrop = document.getElementById('wishlist-drawer-backdrop');
+    if (drawer && backdrop) {
+      drawer.classList.toggle('active', open);
+      backdrop.classList.toggle('active', open);
+      if (open) {
+        const box = document.getElementById('wishlist-drawer-items');
+        if (box) {
+          box.innerHTML = this.state.wishlist.length === 0
+            ? '<div style="text-align:center;padding:3rem 1rem;color:var(--color-ink-muted);">No saved frames yet.</div>'
+            : this.state.wishlist.map(slug => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--color-border);">
+                  <a href="/product/${slug}" style="font-weight:500;color:var(--color-ink);text-decoration:none;">${slug}</a>
+                  <button type="button" class="btn-pill-secondary" style="padding:4px 10px;font-size:12px;" onclick="window.location.href='/product/${slug}'">View</button>
+                </div>
+              `).join('');
+        }
+      }
+    }
+  },
+
+  toggleNavDrawer(open) {
+    const drawer = document.getElementById('nav-drawer');
+    const backdrop = document.getElementById('nav-drawer-backdrop');
+    if (drawer && backdrop) {
+      drawer.classList.toggle('active', open);
+      backdrop.classList.toggle('active', open);
     }
   },
 
@@ -908,12 +1147,21 @@ const OptiiPDP = {
 
   // ─── GLOBAL EVENTS & ACCORDIONS ───
   bindGlobalEvents() {
-    // Escape key closes modals
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.closeConfigurator();
         this.closeZoomModal();
         this.toggleCartDrawer(false);
+        this.toggleWishlistDrawer(false);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        if (this.state.configurator.isOpen) return;
+        const zoomOpen = document.getElementById('fullscreen-zoom-modal')?.classList.contains('active');
+        const delta = e.key === 'ArrowLeft' ? -1 : 1;
+        if (zoomOpen) {
+          this.stepZoomModal(delta);
+        } else if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName || '')) {
+          this.stepGallery(delta);
+        }
       }
     });
 

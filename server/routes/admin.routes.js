@@ -4,43 +4,56 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+const config = require('../config');
 const db = require('../db/database');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const { passwordLimiter } = require('../middleware/rateLimiter');
-const { verifyFileSignature } = require('../utils/fileSignature');
 const { validateBody } = require('../middleware/validate');
-const { productCreateSchema, stockAdjustSchema, passwordChangeSchema, clinicSettingsSchema } = require('../validators/schemas');
+const {
+  productCreateSchema,
+  productUpdateSchema,
+  variantInlineSchema,
+  variantUpdateSchema,
+  brandPayloadSchema,
+  shapePayloadSchema,
+  categoryPayloadSchema,
+  stockAdjustSchema,
+  passwordChangeSchema,
+  clinicSettingsSchema
+} = require('../validators/schemas');
 const { getDashboardAnalytics } = require('../services/dashboardService');
+const { getPublicStoreSettings } = require('../services/storeSettingsService');
 const { buildCsvContent } = require('../utils/csvValidation');
+const { processAndStorePublicImage, resolveSafePublicPath, safeUnlink } = require('../utils/imageProcessor');
 const adminImportsRoutes = require('./adminImports.routes');
 
-// Multer Storage Configuration for Product Images
-const uploadDir = path.join(__dirname, '../../public/images/products');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const unique = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 6)}${ext}`;
-    cb(null, unique);
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+// Secure In-Memory Multer Upload (verified via magic bytes & normalized by Jimp before writing)
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 5 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only JPEG, PNG, and WebP images are allowed.'));
+      cb(new Error('Only JPEG, PNG, and WebP images (max 5 MB) are allowed.'));
     }
   }
 });
+
+function handleImageUploadMiddleware(middlewareFn) {
+  return (req, res, next) => {
+    middlewareFn(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'Image upload rejected.'
+        });
+      }
+      next();
+    });
+  };
+}
 
 // Helper: Administrative Action Audit Logging
 async function logAudit(req, action, entity, entityId, details) {
@@ -385,46 +398,127 @@ router.get('/products/:id', async (req, res) => {
   }
 });
 
+function slugifyProductText(str) {
+  return String(str || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+}
+
+const DEFAULT_COLOR_HEX_MAP = {
+  black: '#111111',
+  matteblack: '#1F2937',
+  tortoise: '#70513B',
+  havana: '#6B4423',
+  brown: '#6E472B',
+  gold: '#C5A059',
+  silver: '#B8BCC0',
+  gunmetal: '#4B5563',
+  grey: '#6B7280',
+  gray: '#6B7280',
+  crystal: '#E5E7EB',
+  clear: '#E5E7EB',
+  transparent: '#E5E7EB',
+  blue: '#1E3A8A',
+  navy: '#1E293B',
+  green: '#166534',
+  olive: '#4D5D3B',
+  red: '#991B1B',
+  burgundy: '#7F1D1D',
+  pink: '#BE185D',
+  rose: '#D9777F',
+  amber: '#B45309',
+  champagne: '#E6D5B8',
+  tigerwood: '#7C4A27'
+};
+
+function deriveInternalColorHex(colorName) {
+  const key = String(colorName || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (DEFAULT_COLOR_HEX_MAP[key]) return DEFAULT_COLOR_HEX_MAP[key];
+  for (const [name, hex] of Object.entries(DEFAULT_COLOR_HEX_MAP)) {
+    if (key.includes(name)) return hex;
+  }
+  return '#111111';
+}
+
+async function generateUniqueVariantSku(masterCode, colorName) {
+  const base = String(masterCode || 'FRM').trim().toUpperCase().replace(/[^A-Z0-9-]+/g, '') || 'FRM';
+  const suffix = String(colorName || 'CLR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || 'CLR';
+  let candidate = `${base}-${suffix}`;
+  let counter = 2;
+  while (await db.get('SELECT id FROM product_variants WHERE sku = ?', [candidate])) {
+    candidate = `${base}-${suffix}${counter}`;
+    counter++;
+  }
+  return candidate;
+}
+
 // POST /api/admin/products - Create New Master Frame Silhouette (and optional initial variant)
 router.post('/products', requireRole('admin'), validateBody(productCreateSchema), async (req, res) => {
   try {
     const {
-      brand_id, shape_id, category_id, name, slug, sku, description,
-      base_price_inr, gender = 'unisex', material, frame_fit,
+      brand_id, shape_id, category_id, name, slug, sku, prod_code, description,
+      base_price_inr, gender = 'unisex', material, frame_fit, frame_type = 'Full Rim',
       lens_width_mm, bridge_width_mm, temple_length_mm,
       frame_height_mm = null, total_width_mm = null,
+      is_active = 1,
       initial_variant = null
     } = req.body;
 
+    const effectiveMasterSku = String(prod_code || sku || '').trim();
+    const effectiveSlug = String(slug || '').trim() || slugifyProductText(`${name}-${effectiveMasterSku}`);
+
+    // Reference integrity validation
+    const [brandRow, shapeRow, catRow] = await Promise.all([
+      db.get('SELECT id FROM brands WHERE id = ?', [Number(brand_id)]),
+      db.get('SELECT id FROM frame_shapes WHERE id = ?', [Number(shape_id)]),
+      db.get('SELECT id FROM categories WHERE id = ?', [Number(category_id)])
+    ]);
+    if (!brandRow) return res.status(400).json({ success: false, message: 'Selected brand does not exist.' });
+    if (!shapeRow) return res.status(400).json({ success: false, message: 'Selected frame shape does not exist.' });
+    if (!catRow) return res.status(400).json({ success: false, message: 'Selected category does not exist.' });
+
     // Uniqueness validation
-    const existing = await db.get('SELECT id FROM products WHERE slug = ? OR sku = ?', [slug.trim(), sku.trim()]);
+    const existing = await db.get('SELECT id FROM products WHERE slug = ? OR sku = ?', [effectiveSlug, effectiveMasterSku]);
     if (existing) {
-      return res.status(409).json({ success: false, message: 'Product slug or master SKU already exists.' });
+      return res.status(409).json({ success: false, message: 'Product code (prod_code) or slug already exists.' });
     }
 
+    let resolvedVariantSku = null;
+    let resolvedVariantHex = null;
     if (initial_variant) {
-      const existingVar = await db.get('SELECT id FROM product_variants WHERE sku = ?', [initial_variant.sku.trim()]);
-      if (existingVar) {
-        return res.status(409).json({ success: false, message: `Variant SKU '${initial_variant.sku}' already exists.` });
+      if (initial_variant.sku && initial_variant.sku.trim()) {
+        resolvedVariantSku = initial_variant.sku.trim();
+        const existingVar = await db.get('SELECT id FROM product_variants WHERE sku = ?', [resolvedVariantSku]);
+        if (existingVar) {
+          return res.status(409).json({ success: false, message: `Variant SKU '${resolvedVariantSku}' already exists.` });
+        }
+      } else {
+        resolvedVariantSku = await generateUniqueVariantSku(effectiveMasterSku, initial_variant.color_name);
       }
+      resolvedVariantHex = (initial_variant.color_hex && initial_variant.color_hex.trim())
+        ? initial_variant.color_hex.trim()
+        : deriveInternalColorHex(initial_variant.color_name);
     }
 
     let newId = null;
     let newVariantId = null;
+    const activeFlag = is_active ? 1 : 0;
 
     await db.transaction(async () => {
       const result = await db.run(
         `INSERT INTO products (
            brand_id, shape_id, category_id, name, slug, sku, description,
-           base_price_inr, gender, material, frame_fit,
+           base_price_inr, gender, material, frame_fit, frame_type,
            lens_width_mm, bridge_width_mm, temple_length_mm,
-           frame_height_mm, total_width_mm
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           frame_height_mm, total_width_mm, is_active
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          brand_id, shape_id, category_id, name.trim(), slug.trim(), sku.trim(), description || null,
-          Number(base_price_inr), gender, material.trim(), frame_fit.trim(),
+          brand_id, shape_id, category_id, name.trim(), effectiveSlug, effectiveMasterSku, description || null,
+          Number(base_price_inr), gender, material.trim(), frame_fit.trim(), String(frame_type || 'Full Rim').trim(),
           Number(lens_width_mm), Number(bridge_width_mm), Number(temple_length_mm),
-          frame_height_mm ? Number(frame_height_mm) : null, total_width_mm ? Number(total_width_mm) : null
+          frame_height_mm ? Number(frame_height_mm) : null, total_width_mm ? Number(total_width_mm) : null, activeFlag
         ]
       );
       newId = result.lastID;
@@ -439,9 +533,9 @@ router.post('/products', requireRole('admin'), validateBody(productCreateSchema)
           [
             newId,
             initial_variant.color_name.trim(),
-            initial_variant.color_hex.trim(),
+            resolvedVariantHex,
             initial_variant.color_secondary_hex ? initial_variant.color_secondary_hex.trim() : null,
-            initial_variant.sku.trim(),
+            resolvedVariantSku,
             initial_variant.price_override_inr ? Number(initial_variant.price_override_inr) : null,
             openingStock
           ]
@@ -457,41 +551,63 @@ router.post('/products', requireRole('admin'), validateBody(productCreateSchema)
              ) VALUES (?, ?, ?, ?, ?, 0, ?, 'replenishment', ?)`,
             [
               newVariantId, newId, req.user ? req.user.id : null, req.user ? req.user.username : 'Admin',
-              openingStock, openingStock, `Opening stock on frame creation (${initial_variant.sku.trim()})`
+              openingStock, openingStock, `Opening stock on frame creation (${resolvedVariantSku})`
             ]
           );
         }
       }
     });
 
-    await logAudit(req, 'CREATE_PRODUCT', 'products', newId, { name, sku, slug, base_price_inr, initial_variant_sku: initial_variant?.sku || null });
+    await logAudit(req, 'CREATE_PRODUCT', 'products', newId, {
+      name,
+      prod_code: effectiveMasterSku,
+      slug: effectiveSlug,
+      base_price_inr,
+      initial_variant_sku: resolvedVariantSku
+    });
 
     res.status(201).json({
       success: true,
-      message: initial_variant ? 'Master frame and initial colorway created successfully.' : 'Master frame created successfully.',
+      message: initial_variant ? 'Frame and initial colourway created successfully.' : 'Frame created successfully.',
       product_id: newId,
       productId: newId,
-      variant_id: newVariantId
+      variant_id: newVariantId,
+      prod_code: effectiveMasterSku,
+      variant_sku: resolvedVariantSku
     });
   } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT' || (err.message && err.message.includes('UNIQUE constraint failed'))) {
+      return res.status(409).json({ success: false, message: 'Product code (prod_code), slug, or variant SKU already exists.' });
+    }
     console.error('Create Product Error:', err);
     res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
   }
 });
 
 // PUT /api/admin/products/:id - Update Master Frame Silhouette (Admin Only)
-router.put('/products/:id', requireRole('admin'), async (req, res) => {
+router.put('/products/:id', requireRole('admin'), validateBody(productUpdateSchema), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const {
       brand_id, shape_id, category_id, name, slug, sku, description,
-      base_price_inr, gender, material, frame_fit,
-      lens_width_mm, bridge_width_mm, temple_length_mm, is_active
+      base_price_inr, gender, material, frame_fit, frame_type,
+      lens_width_mm, bridge_width_mm, temple_length_mm,
+      frame_height_mm, total_width_mm, is_featured, is_active
     } = req.body;
 
     const existing = await db.get('SELECT * FROM products WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
+    }
+
+    if (slug || sku) {
+      const conflict = await db.get(
+        'SELECT id FROM products WHERE id != ? AND (slug = ? OR sku = ?)',
+        [id, (slug || existing.slug).trim(), (sku || existing.sku).trim()]
+      );
+      if (conflict) {
+        return res.status(409).json({ success: false, message: 'Another product already uses this slug or master SKU.' });
+      }
     }
 
     await db.run(
@@ -502,22 +618,41 @@ router.put('/products/:id', requireRole('admin'), async (req, res) => {
          name = COALESCE(?, name),
          slug = COALESCE(?, slug),
          sku = COALESCE(?, sku),
-         description = COALESCE(?, description),
+         description = ?,
          base_price_inr = COALESCE(?, base_price_inr),
          gender = COALESCE(?, gender),
          material = COALESCE(?, material),
          frame_fit = COALESCE(?, frame_fit),
+         frame_type = COALESCE(?, frame_type),
          lens_width_mm = COALESCE(?, lens_width_mm),
          bridge_width_mm = COALESCE(?, bridge_width_mm),
          temple_length_mm = COALESCE(?, temple_length_mm),
+         frame_height_mm = ?,
+         total_width_mm = ?,
+         is_featured = COALESCE(?, is_featured),
          is_active = COALESCE(?, is_active),
          updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [
-        brand_id, shape_id, category_id, name, slug, sku, description,
-        base_price_inr ? Number(base_price_inr) : null, gender, material, frame_fit,
-        lens_width_mm ? Number(lens_width_mm) : null, bridge_width_mm ? Number(bridge_width_mm) : null,
-        temple_length_mm ? Number(temple_length_mm) : null, is_active !== undefined ? Number(is_active) : null,
+        brand_id || null,
+        shape_id || null,
+        category_id || null,
+        name ? name.trim() : null,
+        slug ? slug.trim() : null,
+        sku ? sku.trim() : null,
+        description !== undefined ? description : existing.description,
+        base_price_inr !== undefined ? Number(base_price_inr) : null,
+        gender || null,
+        material ? material.trim() : null,
+        frame_fit || null,
+        frame_type ? frame_type.trim() : null,
+        lens_width_mm !== undefined ? Number(lens_width_mm) : null,
+        bridge_width_mm !== undefined ? Number(bridge_width_mm) : null,
+        temple_length_mm !== undefined ? Number(temple_length_mm) : null,
+        frame_height_mm !== undefined ? (frame_height_mm ? Number(frame_height_mm) : null) : existing.frame_height_mm,
+        total_width_mm !== undefined ? (total_width_mm ? Number(total_width_mm) : null) : existing.total_width_mm,
+        is_featured !== undefined ? (is_featured ? 1 : 0) : null,
+        is_active !== undefined ? (is_active ? 1 : 0) : null,
         id
       ]
     );
@@ -552,45 +687,66 @@ router.patch('/products/:id/status', requireRole('admin'), async (req, res) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════
-// 4. COLORWAY VARIANT & PHOTOGRAPHY MANAGEMENT
+// 4. COLORWAY VARIANT & PHOTOGRAPHY MANAGEMENT (1-5 ORDERED IMAGES)
 // ═════════════════════════════════════════════════════════════════════
 
-// POST /api/admin/products/:id/variants - Add Colorway Variant
-router.post('/products/:id/variants', requireRole('admin'), async (req, res) => {
+// POST /api/admin/products/:id/variants - Add Colorway Variant (with opening stock movement)
+router.post('/products/:id/variants', requireRole('admin'), validateBody(variantInlineSchema), async (req, res) => {
   try {
     const productId = Number(req.params.id);
+    const product = await db.get('SELECT id FROM products WHERE id = ?', [productId]);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Master product not found.' });
+    }
+
     const {
       color_name, color_hex, color_secondary_hex, sku,
       price_override_inr, stock_quantity = 0, is_default = 0
     } = req.body;
-
-    if (!color_name || !color_hex || !sku) {
-      return res.status(400).json({ success: false, message: 'color_name, color_hex, and variant SKU are required.' });
-    }
 
     const existingSku = await db.get('SELECT id FROM product_variants WHERE sku = ?', [sku.trim()]);
     if (existingSku) {
       return res.status(409).json({ success: false, message: 'Variant SKU already exists.' });
     }
 
-    // If marked default, unset other defaults for this product
-    if (is_default) {
-      await db.run('UPDATE product_variants SET is_default = 0 WHERE product_id = ?', [productId]);
-    }
+    let variantId = null;
+    const openingStock = Number(stock_quantity || 0);
 
-    const result = await db.run(
-      `INSERT INTO product_variants (
-         product_id, color_name, color_hex, color_secondary_hex, sku,
-         price_override_inr, stock_quantity, is_default, is_active
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [
-        productId, color_name.trim(), color_hex.trim(), color_secondary_hex ? color_secondary_hex.trim() : null,
-        sku.trim(), price_override_inr ? Number(price_override_inr) : null, Number(stock_quantity), is_default ? 1 : 0
-      ]
-    );
+    await db.transaction(async () => {
+      if (is_default) {
+        await db.run('UPDATE product_variants SET is_default = 0 WHERE product_id = ?', [productId]);
+      }
 
-    const variantId = result.lastID;
-    await logAudit(req, 'CREATE_VARIANT', 'product_variants', variantId, { productId, color_name, sku, stock_quantity });
+      const result = await db.run(
+        `INSERT INTO product_variants (
+           product_id, color_name, color_hex, color_secondary_hex, sku,
+           price_override_inr, stock_quantity, is_default, is_active
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        [
+          productId, color_name.trim(), color_hex.trim(),
+          color_secondary_hex ? color_secondary_hex.trim() : null,
+          sku.trim(), price_override_inr ? Number(price_override_inr) : null,
+          openingStock, is_default ? 1 : 0
+        ]
+      );
+      variantId = result.lastID;
+
+      if (openingStock > 0) {
+        await db.run(
+          `INSERT INTO inventory_movements (
+             variant_id, product_id, user_id, username,
+             change_quantity, previous_quantity, new_quantity,
+             movement_type, reason
+           ) VALUES (?, ?, ?, ?, ?, 0, ?, 'replenishment', ?)`,
+          [
+            variantId, productId, req.user ? req.user.id : null, req.user ? req.user.username : 'Admin',
+            openingStock, openingStock, `Opening stock on colorway creation (${sku.trim()})`
+          ]
+        );
+      }
+    });
+
+    await logAudit(req, 'CREATE_VARIANT', 'product_variants', variantId, { productId, color_name, sku, stock_quantity: openingStock });
 
     res.status(201).json({
       success: true,
@@ -604,7 +760,7 @@ router.post('/products/:id/variants', requireRole('admin'), async (req, res) => 
 });
 
 // PUT /api/admin/variants/:variantId - Edit Variant
-router.put('/variants/:variantId', requireRole('admin'), async (req, res) => {
+router.put('/variants/:variantId', requireRole('admin'), validateBody(variantUpdateSchema), async (req, res) => {
   try {
     const variantId = Number(req.params.variantId);
     const { color_name, color_hex, color_secondary_hex, sku, price_override_inr, is_default, is_active } = req.body;
@@ -614,25 +770,39 @@ router.put('/variants/:variantId', requireRole('admin'), async (req, res) => {
       return res.status(404).json({ success: false, message: 'Variant not found.' });
     }
 
+    if (sku && sku.trim() !== variant.sku) {
+      const conflict = await db.get('SELECT id FROM product_variants WHERE sku = ? AND id != ?', [sku.trim(), variantId]);
+      if (conflict) {
+        return res.status(409).json({ success: false, message: 'Variant SKU already exists.' });
+      }
+    }
+
     if (is_default) {
       await db.run('UPDATE product_variants SET is_default = 0 WHERE product_id = ?', [variant.product_id]);
     }
+
+    const nextPriceOverride = price_override_inr !== undefined
+      ? (price_override_inr !== null && price_override_inr !== '' ? Number(price_override_inr) : null)
+      : variant.price_override_inr;
 
     await db.run(
       `UPDATE product_variants SET
          color_name = COALESCE(?, color_name),
          color_hex = COALESCE(?, color_hex),
-         color_secondary_hex = COALESCE(?, color_secondary_hex),
+         color_secondary_hex = ?,
          sku = COALESCE(?, sku),
          price_override_inr = ?,
          is_default = COALESCE(?, is_default),
          is_active = COALESCE(?, is_active)
        WHERE id = ?`,
       [
-        color_name, color_hex, color_secondary_hex, sku,
-        price_override_inr !== undefined ? (price_override_inr ? Number(price_override_inr) : null) : variant.price_override_inr,
-        is_default !== undefined ? Number(is_default) : null,
-        is_active !== undefined ? Number(is_active) : null,
+        color_name ? color_name.trim() : null,
+        color_hex ? color_hex.trim() : null,
+        color_secondary_hex !== undefined ? (color_secondary_hex || null) : variant.color_secondary_hex,
+        sku ? sku.trim() : null,
+        nextPriceOverride,
+        is_default !== undefined ? (is_default ? 1 : 0) : null,
+        is_active !== undefined ? (is_active ? 1 : 0) : null,
         variantId
       ]
     );
@@ -644,41 +814,203 @@ router.put('/variants/:variantId', requireRole('admin'), async (req, res) => {
   }
 });
 
-// POST /api/admin/variants/:variantId/images - Upload Image View for Variant (Studio, Model, Angle, Hinge)
-router.post('/variants/:variantId/images', requireRole('admin'), upload.single('image'), async (req, res) => {
+// DELETE /api/admin/variants/:variantId - Delete Variant (with image disk cleanup)
+router.delete('/variants/:variantId', requireRole('admin'), async (req, res) => {
   try {
     const variantId = Number(req.params.variantId);
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Image file is required.' });
+    const variant = await db.get('SELECT * FROM product_variants WHERE id = ?', [variantId]);
+    if (!variant) {
+      return res.status(404).json({ success: false, message: 'Variant not found.' });
     }
 
-    if (!verifyFileSignature(req.file.path, req.file.mimetype)) {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
-      return res.status(400).json({ success: false, message: 'Invalid image binary signature.' });
+    const images = await db.all('SELECT image_url FROM product_images WHERE variant_id = ?', [variantId]);
+    await db.run('DELETE FROM product_variants WHERE id = ?', [variantId]);
+    for (const img of images) {
+      if (img.image_url && img.image_url.startsWith('images/products/')) {
+        safeUnlink(resolveSafePublicPath(img.image_url));
+      }
     }
 
-    const { image_type = 'studio_front', alt_text, display_order = 1 } = req.body;
-    const validTypes = ['studio_front', 'model_on_face', 'angle_45', 'hinge_detail', 'packaging'];
-    if (!validTypes.includes(image_type)) {
-      return res.status(400).json({ success: false, message: `Invalid image type. Must be one of: [${validTypes.join(', ')}]` });
-    }
-
-    const imageUrl = `images/products/${req.file.filename}`;
-    const result = await db.run(
-      `INSERT INTO product_images (variant_id, image_type, image_url, alt_text, display_order)
-       VALUES (?, ?, ?, ?, ?)`,
-      [variantId, image_type, imageUrl, alt_text || null, Number(display_order)]
-    );
-
-    await logAudit(req, 'UPLOAD_IMAGE', 'product_images', result.lastID, { variantId, image_type, imageUrl });
-    res.status(201).json({
-      success: true,
-      message: 'Product image uploaded successfully.',
-      image: { id: result.lastID, variant_id: variantId, image_type, image_url: imageUrl }
-    });
+    await logAudit(req, 'DELETE_VARIANT', 'product_variants', variantId, { sku: variant.sku, product_id: variant.product_id });
+    res.json({ success: true, message: `Variant ${variant.sku} deleted.` });
   } catch (err) {
-    console.error('Image Upload Error:', err);
-    res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
+    console.error('Delete Variant Error:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// POST /api/admin/variants/:variantId/images - Upload 1 to 5 Product Images (validates MIME + magic bytes, Jimp resizes, max 5 total)
+router.post(
+  '/variants/:variantId/images',
+  requireRole('admin'),
+  handleImageUploadMiddleware(uploadMemory.fields([{ name: 'images', maxCount: 5 }, { name: 'image', maxCount: 1 }])),
+  async (req, res) => {
+    const storedFiles = [];
+    try {
+      const variantId = Number(req.params.variantId);
+      const variant = await db.get('SELECT id, sku FROM product_variants WHERE id = ?', [variantId]);
+      if (!variant) {
+        return res.status(404).json({ success: false, message: 'Variant not found.' });
+      }
+
+      const incomingFiles = [
+        ...(req.files?.images || []),
+        ...(req.files?.image || [])
+      ];
+
+      if (incomingFiles.length === 0) {
+        return res.status(400).json({ success: false, message: 'Please select at least 1 image file (JPEG, PNG, or WebP).' });
+      }
+
+      const countRow = await db.get('SELECT COUNT(*) as count, COALESCE(MAX(display_order), 0) as maxOrder FROM product_images WHERE variant_id = ?', [variantId]);
+      const existingCount = countRow ? countRow.count : 0;
+      let nextOrder = (countRow ? countRow.maxOrder : 0) + 1;
+
+      if (existingCount + incomingFiles.length > 5) {
+        return res.status(400).json({
+          success: false,
+          message: `Maximum 5 images allowed per variant colorway (currently ${existingCount}/5, attempted to add ${incomingFiles.length}).`
+        });
+      }
+
+      const validTypes = ['studio_front', 'model_on_face', 'angle_45', 'hinge_detail', 'packaging'];
+      let requestedTypes = req.body.image_types || req.body.image_type || 'studio_front';
+      if (typeof requestedTypes === 'string' && requestedTypes.startsWith('[')) {
+        try { requestedTypes = JSON.parse(requestedTypes); } catch (_) {}
+      }
+
+      const defaultTypeSequence = ['studio_front', 'model_on_face', 'angle_45', 'hinge_detail', 'packaging'];
+      const resolvedTypes = incomingFiles.map((_, idx) => {
+        const rawT = Array.isArray(requestedTypes) ? requestedTypes[idx] : (incomingFiles.length === 1 ? requestedTypes : defaultTypeSequence[Math.min(existingCount + idx, 4)]);
+        const t = String(rawT || 'studio_front').trim();
+        if (!validTypes.includes(t)) {
+          throw new Error(`Invalid image type '${t}'. Must be one of: [${validTypes.join(', ')}]`);
+        }
+        return t;
+      });
+
+      // Validate & process all files before inserting any DB rows (prevents orphaned DB rows on partial failure)
+      const processed = [];
+      for (let idx = 0; idx < incomingFiles.length; idx++) {
+        const stored = await processAndStorePublicImage(incomingFiles[idx], {
+          subdir: 'products',
+          prefix: `prod_v${variantId}`,
+          maxWidth: 1400
+        });
+        storedFiles.push(stored.diskPath);
+        processed.push({
+          stored,
+          imgType: resolvedTypes[idx],
+          altText: req.body.alt_text || null,
+          order: req.body.display_order && incomingFiles.length === 1 ? Number(req.body.display_order) : nextOrder++
+        });
+      }
+
+      const createdImages = [];
+      await db.transaction(async () => {
+        for (const item of processed) {
+          const result = await db.run(
+            `INSERT INTO product_images (variant_id, image_type, image_url, alt_text, display_order)
+             VALUES (?, ?, ?, ?, ?)`,
+            [variantId, item.imgType, item.stored.imageUrl, item.altText, item.order]
+          );
+          createdImages.push({
+            id: result.lastID,
+            variant_id: variantId,
+            image_type: item.imgType,
+            image_url: item.stored.imageUrl,
+            display_order: item.order
+          });
+        }
+      });
+
+      await logAudit(req, 'UPLOAD_IMAGE', 'product_images', createdImages[0]?.id || variantId, {
+        variantId,
+        count: createdImages.length,
+        urls: createdImages.map(i => i.image_url)
+      });
+
+      res.status(201).json({
+        success: true,
+        message: `${createdImages.length} product image(s) uploaded and optimized successfully.`,
+        image: createdImages[0],
+        images: createdImages
+      });
+    } catch (err) {
+      storedFiles.forEach(p => safeUnlink(p));
+      console.error('Image Upload Error:', err);
+      const status = err.message && (err.message.includes('Invalid') || err.message.includes('Unsupported')) ? 400 : 500;
+      res.status(status).json({ success: false, message: err.message || 'Image upload failed.' });
+    }
+  }
+);
+
+// PUT /api/admin/variants/:variantId/images/reorder - Persist Custom Display Order (1st = Primary)
+router.put('/variants/:variantId/images/reorder', requireRole('admin'), async (req, res) => {
+  try {
+    const variantId = Number(req.params.variantId);
+    const { image_ids } = req.body;
+    if (!Array.isArray(image_ids) || image_ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'image_ids array is required.' });
+    }
+
+    const existing = await db.all('SELECT id FROM product_images WHERE variant_id = ?', [variantId]);
+    const validIds = new Set(existing.map(r => r.id));
+    if (image_ids.some(id => !validIds.has(Number(id)))) {
+      return res.status(400).json({ success: false, message: 'One or more image IDs do not belong to this variant.' });
+    }
+
+    await db.transaction(async () => {
+      for (let i = 0; i < image_ids.length; i++) {
+        await db.run(
+          'UPDATE product_images SET display_order = ? WHERE id = ? AND variant_id = ?',
+          [i + 1, Number(image_ids[i]), variantId]
+        );
+      }
+    });
+
+    const images = await db.all('SELECT * FROM product_images WHERE variant_id = ? ORDER BY display_order ASC, id ASC', [variantId]);
+    await logAudit(req, 'REORDER_IMAGES', 'product_variants', variantId, { image_ids });
+    res.json({ success: true, message: 'Image order updated (1st image is primary view).', images });
+  } catch (err) {
+    console.error('Image Reorder Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to reorder images.' });
+  }
+});
+
+// PATCH /api/admin/images/:imageId - Update Image Type or Set Primary
+router.patch('/images/:imageId', requireRole('admin'), async (req, res) => {
+  try {
+    const imageId = Number(req.params.imageId);
+    const img = await db.get('SELECT * FROM product_images WHERE id = ?', [imageId]);
+    if (!img) return res.status(404).json({ success: false, message: 'Image not found.' });
+
+    const { image_type, alt_text, set_primary } = req.body;
+    const validTypes = ['studio_front', 'model_on_face', 'angle_45', 'hinge_detail', 'packaging'];
+    if (image_type && !validTypes.includes(image_type)) {
+      return res.status(400).json({ success: false, message: 'Invalid image_type.' });
+    }
+
+    await db.transaction(async () => {
+      if (set_primary) {
+        const others = await db.all('SELECT id FROM product_images WHERE variant_id = ? AND id != ? ORDER BY display_order ASC, id ASC', [img.variant_id, imageId]);
+        await db.run('UPDATE product_images SET display_order = 1 WHERE id = ?', [imageId]);
+        for (let i = 0; i < others.length; i++) {
+          await db.run('UPDATE product_images SET display_order = ? WHERE id = ?', [i + 2, others[i].id]);
+        }
+      }
+      if (image_type !== undefined || alt_text !== undefined) {
+        await db.run(
+          'UPDATE product_images SET image_type = COALESCE(?, image_type), alt_text = COALESCE(?, alt_text) WHERE id = ?',
+          [image_type || null, alt_text !== undefined ? alt_text : null, imageId]
+        );
+      }
+    });
+
+    await logAudit(req, 'UPDATE_IMAGE', 'product_images', imageId, { image_type, set_primary });
+    res.json({ success: true, message: set_primary ? 'Primary image updated.' : 'Image details updated.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
 
@@ -691,12 +1023,8 @@ router.delete('/images/:imageId', requireRole('admin'), async (req, res) => {
       return res.status(404).json({ success: false, message: 'Image not found.' });
     }
 
-    // Attempt to remove physical file if under public/images/products
     if (img.image_url && img.image_url.startsWith('images/products/')) {
-      const diskPath = path.join(__dirname, '../../public', img.image_url);
-      if (fs.existsSync(diskPath)) {
-        try { fs.unlinkSync(diskPath); } catch (_) {}
-      }
+      safeUnlink(resolveSafePublicPath(img.image_url));
     }
 
     await db.run('DELETE FROM product_images WHERE id = ?', [imageId]);
@@ -986,7 +1314,20 @@ router.get('/inventory/movements', async (req, res) => {
 // 6. TAXONOMY MANAGEMENT (BRANDS, SHAPES, CATEGORIES)
 // ═════════════════════════════════════════════════════════════════════
 
-// Brands: GET, POST, PUT, DELETE
+function sanitizeShapeSvg(rawSvg) {
+  const defaultSvg = '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="14" cy="12" r="8"/><circle cx="34" cy="12" r="8"/><line x1="22" y1="12" x2="26" y2="12"/></svg>';
+  const str = String(rawSvg || '').trim();
+  if (!str) return defaultSvg;
+  if (!str.toLowerCase().includes('<svg')) {
+    throw new Error('Shape icon must be valid inline SVG markup (<svg ...>).');
+  }
+  if (/<script|on\w+\s*=|javascript:/i.test(str)) {
+    throw new Error('Unsafe script or event attribute detected in SVG markup.');
+  }
+  return str;
+}
+
+// Brands: GET, POST, PUT, DELETE + Logo Upload
 router.get('/brands', async (req, res) => {
   try {
     const brands = await db.all(`
@@ -1002,14 +1343,17 @@ router.get('/brands', async (req, res) => {
   }
 });
 
-router.post('/brands', requireRole('admin'), async (req, res) => {
+router.post('/brands', requireRole('admin'), validateBody(brandPayloadSchema), async (req, res) => {
   try {
-    const { name, slug, description, logo_url } = req.body;
-    if (!name || !slug) return res.status(400).json({ success: false, message: 'Name and slug are required.' });
+    const { name, slug, description, logo_url, is_active = 1 } = req.body;
+    const conflict = await db.get('SELECT id FROM brands WHERE LOWER(name) = LOWER(?) OR slug = ?', [name.trim(), slug.trim()]);
+    if (conflict) {
+      return res.status(409).json({ success: false, message: 'A brand with this name or slug already exists.' });
+    }
 
     const result = await db.run(
-      'INSERT INTO brands (name, slug, description, logo_url) VALUES (?, ?, ?, ?)',
-      [name.trim(), slug.trim(), description || null, logo_url || null]
+      'INSERT INTO brands (name, slug, description, logo_url, is_active) VALUES (?, ?, ?, ?, ?)',
+      [name.trim(), slug.trim(), description || null, logo_url || null, is_active ? 1 : 0]
     );
     await logAudit(req, 'CREATE_BRAND', 'brands', result.lastID, { name, slug });
     res.status(201).json({ success: true, message: 'Brand created successfully.', brand_id: result.lastID });
@@ -1018,16 +1362,83 @@ router.post('/brands', requireRole('admin'), async (req, res) => {
   }
 });
 
-router.put('/brands/:id', requireRole('admin'), async (req, res) => {
+router.put('/brands/:id', requireRole('admin'), validateBody(brandPayloadSchema), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, slug, description, logo_url } = req.body;
-    await db.run(
-      'UPDATE brands SET name = COALESCE(?, name), slug = COALESCE(?, slug), description = COALESCE(?, description), logo_url = COALESCE(?, logo_url) WHERE id = ?',
-      [name, slug, description, logo_url, id]
+    const existing = await db.get('SELECT * FROM brands WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ success: false, message: 'Brand not found.' });
+
+    const { name, slug, description, logo_url, is_active } = req.body;
+    const conflict = await db.get(
+      'SELECT id FROM brands WHERE id != ? AND (LOWER(name) = LOWER(?) OR slug = ?)',
+      [id, name.trim(), slug.trim()]
     );
-    await logAudit(req, 'UPDATE_BRAND', 'brands', id, { name, slug });
+    if (conflict) {
+      return res.status(409).json({ success: false, message: 'Another brand already uses this name or slug.' });
+    }
+
+    await db.run(
+      `UPDATE brands SET
+         name = ?,
+         slug = ?,
+         description = ?,
+         logo_url = COALESCE(?, logo_url),
+         is_active = COALESCE(?, is_active)
+       WHERE id = ?`,
+      [
+        name.trim(),
+        slug.trim(),
+        description !== undefined ? (description || null) : existing.description,
+        logo_url !== undefined ? (logo_url || null) : existing.logo_url,
+        is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+        id
+      ]
+    );
+    await logAudit(req, 'UPDATE_BRAND', 'brands', id, { name, slug, is_active });
     res.json({ success: true, message: 'Brand updated successfully.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+router.post(
+  '/brands/:id/logo',
+  requireRole('admin'),
+  handleImageUploadMiddleware(uploadMemory.single('logo')),
+  async (req, res) => {
+    let stored = null;
+    try {
+      const id = Number(req.params.id);
+      const brand = await db.get('SELECT * FROM brands WHERE id = ?', [id]);
+      if (!brand) return res.status(404).json({ success: false, message: 'Brand not found.' });
+      if (!req.file) return res.status(400).json({ success: false, message: 'Brand logo image file is required.' });
+
+      stored = await processAndStorePublicImage(req.file, { subdir: 'brands', prefix: `brand_${id}`, maxWidth: 600 });
+      await db.run('UPDATE brands SET logo_url = ? WHERE id = ?', [`/${stored.imageUrl}`, id]);
+      if (brand.logo_url && brand.logo_url.startsWith('/images/brands/')) {
+        safeUnlink(resolveSafePublicPath(brand.logo_url));
+      }
+      await logAudit(req, 'UPLOAD_BRAND_LOGO', 'brands', id, { logo_url: `/${stored.imageUrl}` });
+      res.json({ success: true, message: 'Brand logo uploaded.', logo_url: `/${stored.imageUrl}` });
+    } catch (err) {
+      if (stored?.diskPath) safeUnlink(stored.diskPath);
+      const status = err.message && (err.message.includes('Invalid') || err.message.includes('Unsupported')) ? 400 : 500;
+      res.status(status).json({ success: false, message: err.message || 'Failed to upload brand logo.' });
+    }
+  }
+);
+
+router.delete('/brands/:id/logo', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const brand = await db.get('SELECT * FROM brands WHERE id = ?', [id]);
+    if (!brand) return res.status(404).json({ success: false, message: 'Brand not found.' });
+    if (brand.logo_url && brand.logo_url.startsWith('/images/brands/')) {
+      safeUnlink(resolveSafePublicPath(brand.logo_url));
+    }
+    await db.run('UPDATE brands SET logo_url = NULL WHERE id = ?', [id]);
+    await logAudit(req, 'REMOVE_BRAND_LOGO', 'brands', id, {});
+    res.json({ success: true, message: 'Brand logo removed.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
@@ -1036,12 +1447,21 @@ router.put('/brands/:id', requireRole('admin'), async (req, res) => {
 router.delete('/brands/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
+    const existing = await db.get('SELECT * FROM brands WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ success: false, message: 'Brand not found.' });
+
     const ref = await db.get('SELECT COUNT(*) as count FROM products WHERE brand_id = ?', [id]);
     if (ref && ref.count > 0) {
-      return res.status(409).json({ success: false, message: `Cannot delete brand referenced by ${ref.count} product(s). Please reassign products first.` });
+      return res.status(409).json({
+        success: false,
+        message: `Cannot delete "${existing.name}": ${ref.count} frame(s) are assigned to this brand. Reassign those frames or disable the brand instead.`
+      });
+    }
+    if (existing.logo_url && existing.logo_url.startsWith('/images/brands/')) {
+      safeUnlink(resolveSafePublicPath(existing.logo_url));
     }
     await db.run('DELETE FROM brands WHERE id = ?', [id]);
-    await logAudit(req, 'DELETE_BRAND', 'brands', id, {});
+    await logAudit(req, 'DELETE_BRAND', 'brands', id, { name: existing.name });
     res.json({ success: true, message: 'Brand deleted successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -1056,7 +1476,7 @@ router.get('/shapes', async (req, res) => {
       FROM frame_shapes s
       LEFT JOIN products p ON p.shape_id = s.id AND p.is_active = 1
       GROUP BY s.id
-      ORDER BY s.display_order ASC
+      ORDER BY s.display_order ASC, s.name ASC
     `);
     res.json({ success: true, shapes });
   } catch (err) {
@@ -1064,48 +1484,81 @@ router.get('/shapes', async (req, res) => {
   }
 });
 
-router.post('/shapes', requireRole('admin'), async (req, res) => {
+router.post('/shapes', requireRole('admin'), validateBody(shapePayloadSchema), async (req, res) => {
   try {
-    const { name, slug, icon_svg, svg_icon_path, display_order = 0 } = req.body;
-    if (!name || !slug) return res.status(400).json({ success: false, message: 'Name and slug are required.' });
-    const svgContent = icon_svg || svg_icon_path || '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="14" cy="12" r="8"/><circle cx="34" cy="12" r="8"/><line x1="22" y1="12" x2="26" y2="12"/></svg>';
+    const { name, slug, icon_svg, svg_icon_path, display_order = 0, is_active = 1 } = req.body;
+    const conflict = await db.get('SELECT id FROM frame_shapes WHERE LOWER(name) = LOWER(?) OR slug = ?', [name.trim(), slug.trim()]);
+    if (conflict) {
+      return res.status(409).json({ success: false, message: 'A frame shape with this name or slug already exists.' });
+    }
 
+    const svgContent = sanitizeShapeSvg(icon_svg || svg_icon_path);
     const result = await db.run(
-      'INSERT INTO frame_shapes (name, slug, icon_svg, display_order) VALUES (?, ?, ?, ?)',
-      [name.trim(), slug.trim(), svgContent, Number(display_order)]
+      'INSERT INTO frame_shapes (name, slug, icon_svg, display_order, is_active) VALUES (?, ?, ?, ?, ?)',
+      [name.trim(), slug.trim(), svgContent, Number(display_order), is_active ? 1 : 0]
     );
     await logAudit(req, 'CREATE_SHAPE', 'frame_shapes', result.lastID, { name, slug });
     res.status(201).json({ success: true, message: 'Frame shape created successfully.', shape_id: result.lastID });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
+    const status = err.message && err.message.includes('SVG') ? 400 : 500;
+    res.status(status).json({ success: false, message: err.message || 'Internal Server Error' });
   }
 });
 
-router.put('/shapes/:id', requireRole('admin'), async (req, res) => {
+router.put('/shapes/:id', requireRole('admin'), validateBody(shapePayloadSchema), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, slug, icon_svg, svg_icon_path, display_order } = req.body;
-    const svgContent = icon_svg !== undefined ? icon_svg : svg_icon_path;
-    await db.run(
-      'UPDATE frame_shapes SET name = COALESCE(?, name), slug = COALESCE(?, slug), icon_svg = COALESCE(?, icon_svg), display_order = COALESCE(?, display_order) WHERE id = ?',
-      [name, slug, svgContent !== undefined ? svgContent : null, display_order !== undefined ? Number(display_order) : null, id]
+    const existing = await db.get('SELECT * FROM frame_shapes WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ success: false, message: 'Frame shape not found.' });
+
+    const { name, slug, icon_svg, svg_icon_path, display_order, is_active } = req.body;
+    const conflict = await db.get(
+      'SELECT id FROM frame_shapes WHERE id != ? AND (LOWER(name) = LOWER(?) OR slug = ?)',
+      [id, name.trim(), slug.trim()]
     );
-    await logAudit(req, 'UPDATE_SHAPE', 'frame_shapes', id, { name, slug });
+    if (conflict) {
+      return res.status(409).json({ success: false, message: 'Another shape already uses this name or slug.' });
+    }
+
+    const rawSvg = icon_svg !== undefined ? icon_svg : svg_icon_path;
+    const svgContent = rawSvg !== undefined && rawSvg !== null && String(rawSvg).trim() !== ''
+      ? sanitizeShapeSvg(rawSvg)
+      : existing.icon_svg;
+
+    await db.run(
+      'UPDATE frame_shapes SET name = ?, slug = ?, icon_svg = ?, display_order = ?, is_active = ? WHERE id = ?',
+      [
+        name.trim(),
+        slug.trim(),
+        svgContent,
+        display_order !== undefined ? Number(display_order) : existing.display_order,
+        is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+        id
+      ]
+    );
+    await logAudit(req, 'UPDATE_SHAPE', 'frame_shapes', id, { name, slug, is_active });
     res.json({ success: true, message: 'Frame shape updated successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Internal Server Error' });
+    const status = err.message && err.message.includes('SVG') ? 400 : 500;
+    res.status(status).json({ success: false, message: err.message || 'Internal Server Error' });
   }
 });
 
 router.delete('/shapes/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
+    const existing = await db.get('SELECT * FROM frame_shapes WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ success: false, message: 'Frame shape not found.' });
+
     const ref = await db.get('SELECT COUNT(*) as count FROM products WHERE shape_id = ?', [id]);
     if (ref && ref.count > 0) {
-      return res.status(409).json({ success: false, message: `Cannot delete shape referenced by ${ref.count} product(s).` });
+      return res.status(409).json({
+        success: false,
+        message: `Cannot delete "${existing.name}": ${ref.count} frame(s) use this shape. Reassign those frames or disable the shape instead.`
+      });
     }
     await db.run('DELETE FROM frame_shapes WHERE id = ?', [id]);
-    await logAudit(req, 'DELETE_SHAPE', 'frame_shapes', id, {});
+    await logAudit(req, 'DELETE_SHAPE', 'frame_shapes', id, { name: existing.name });
     res.json({ success: true, message: 'Frame shape deleted successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -1120,7 +1573,7 @@ router.get('/categories', async (req, res) => {
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id AND p.is_active = 1
       GROUP BY c.id
-      ORDER BY c.display_order ASC
+      ORDER BY c.display_order ASC, c.name ASC
     `);
     res.json({ success: true, categories });
   } catch (err) {
@@ -1128,62 +1581,134 @@ router.get('/categories', async (req, res) => {
   }
 });
 
-router.post('/categories', requireRole('admin'), async (req, res) => {
+router.post('/categories', requireRole('admin'), validateBody(categoryPayloadSchema), async (req, res) => {
   try {
-    const { name, slug, description, display_order = 0 } = req.body;
-    if (!name || !slug) return res.status(400).json({ success: false, message: 'Name and slug are required.' });
+    const { name, slug, category_type = 'glasses', gender = 'unisex', description = null, display_order = 0, is_active = 1 } = req.body;
+    const conflict = await db.get('SELECT id FROM categories WHERE slug = ?', [slug.trim()]);
+    if (conflict) {
+      return res.status(409).json({ success: false, message: 'A category with this slug already exists.' });
+    }
 
     const result = await db.run(
-      'INSERT INTO categories (name, slug, description, display_order) VALUES (?, ?, ?, ?)',
-      [name.trim(), slug.trim(), description || null, Number(display_order)]
+      `INSERT INTO categories (name, slug, category_type, gender, description, display_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [name.trim(), slug.trim(), category_type, gender, description || null, Number(display_order), is_active ? 1 : 0]
     );
-    await logAudit(req, 'CREATE_CATEGORY', 'categories', result.lastID, { name, slug });
+    await logAudit(req, 'CREATE_CATEGORY', 'categories', result.lastID, { name, slug, category_type });
     res.status(201).json({ success: true, message: 'Category created successfully.', category_id: result.lastID });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
   }
 });
 
-router.put('/categories/:id', requireRole('admin'), async (req, res) => {
+router.put('/categories/:id', requireRole('admin'), validateBody(categoryPayloadSchema), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, slug, description, display_order } = req.body;
+    const existing = await db.get('SELECT * FROM categories WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ success: false, message: 'Category not found.' });
+
+    const { name, slug, category_type, gender, description, display_order, is_active } = req.body;
+    const conflict = await db.get('SELECT id FROM categories WHERE id != ? AND slug = ?', [id, slug.trim()]);
+    if (conflict) {
+      return res.status(409).json({ success: false, message: 'Another category already uses this slug.' });
+    }
+
     await db.run(
-      'UPDATE categories SET name = COALESCE(?, name), slug = COALESCE(?, slug), description = COALESCE(?, description), display_order = COALESCE(?, display_order) WHERE id = ?',
-      [name, slug, description, display_order !== undefined ? Number(display_order) : null, id]
+      `UPDATE categories SET
+         name = ?,
+         slug = ?,
+         category_type = ?,
+         gender = ?,
+         description = ?,
+         display_order = ?,
+         is_active = ?
+       WHERE id = ?`,
+      [
+        name.trim(),
+        slug.trim(),
+        category_type || existing.category_type,
+        gender || existing.gender,
+        description !== undefined ? (description || null) : existing.description,
+        display_order !== undefined ? Number(display_order) : existing.display_order,
+        is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+        id
+      ]
     );
-    await logAudit(req, 'UPDATE_CATEGORY', 'categories', id, { name, slug });
+    await logAudit(req, 'UPDATE_CATEGORY', 'categories', id, { name, slug, category_type, is_active });
     res.json({ success: true, message: 'Category updated successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
 
-// ═════════════════════════════════════════════════════════════════════
-// 7. LENS OPTIONS & DYNAMIC PRICING CONFIGURATION
-// ═════════════════════════════════════════════════════════════════════
-
-// GET /api/admin/lenses - All 4-step lens tiers with prices & active status
-router.get('/lenses', async (req, res) => {
+router.delete('/categories/:id', requireRole('admin'), async (req, res) => {
   try {
-    const [usages, thicknesses, coatings] = await Promise.all([
-      db.all('SELECT * FROM lens_usages ORDER BY id ASC'),
-      db.all('SELECT * FROM lens_thicknesses ORDER BY index_rating ASC'),
-      db.all('SELECT * FROM lens_coatings ORDER BY id ASC')
-    ]);
-    res.json({ success: true, usages, thicknesses, coatings });
+    const id = Number(req.params.id);
+    const existing = await db.get('SELECT * FROM categories WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ success: false, message: 'Category not found.' });
+
+    const ref = await db.get('SELECT COUNT(*) as count FROM products WHERE category_id = ?', [id]);
+    if (ref && ref.count > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Cannot delete "${existing.name}": ${ref.count} frame(s) belong to this category. Reassign those frames or disable the category instead.`
+      });
+    }
+    await db.run('DELETE FROM categories WHERE id = ?', [id]);
+    await logAudit(req, 'DELETE_CATEGORY', 'categories', id, { name: existing.name });
+    res.json({ success: true, message: 'Category deleted successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
 
-// PUT /api/admin/lenses/usages/:id - Update Lens Usage Tier Price & Status (Admin / Optometrist)
+// ═════════════════════════════════════════════════════════════════════
+// 7. LENS OPTIONS & DYNAMIC PRICING CONFIGURATION (STEPS 1, 2, 3, 4)
+// ═════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/lenses - All 4-step lens tiers & Step 2 prescription methods
+router.get('/lenses', async (req, res) => {
+  try {
+    const [usages, prescription_options, thicknesses, coatings] = await Promise.all([
+      db.all('SELECT * FROM lens_usages ORDER BY display_order ASC, id ASC'),
+      db.all('SELECT * FROM lens_prescription_options ORDER BY display_order ASC, id ASC'),
+      db.all('SELECT * FROM lens_thicknesses ORDER BY index_rating ASC, id ASC'),
+      db.all('SELECT * FROM lens_coatings ORDER BY display_order ASC, id ASC')
+    ]);
+    res.json({ success: true, usages, prescription_options, thicknesses, coatings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// Step 1: Lens Usages (Create, Update, Delete)
+router.post('/lenses/usages', requireRole('admin', 'optometrist'), async (req, res) => {
+  try {
+    const { name, slug, description = '', base_price_inr = 0, display_order = 0, is_active = 1 } = req.body;
+    if (!name || Number(base_price_inr) < 0 || Number.isNaN(Number(base_price_inr))) {
+      return res.status(400).json({ success: false, message: 'Valid name and non-negative base price are required.' });
+    }
+    const cleanSlug = (slug || name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const result = await db.run(
+      'INSERT INTO lens_usages (name, slug, description, base_price_inr, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      [name.trim(), cleanSlug, description, Number(base_price_inr), Number(display_order), is_active ? 1 : 0]
+    );
+    await logAudit(req, 'CREATE_LENS_USAGE', 'lens_usages', result.lastID, { name, base_price_inr });
+    res.status(201).json({ success: true, message: 'Lens usage created.', id: result.lastID });
+  } catch (err) {
+    res.status(err.message && err.message.includes('UNIQUE') ? 409 : 500).json({ success: false, message: err.message || 'Internal Server Error' });
+  }
+});
+
 router.put('/lenses/usages/:id', requireRole('admin', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { name, description, base_price_inr, is_active } = req.body;
+    if (base_price_inr !== undefined && (Number.isNaN(Number(base_price_inr)) || Number(base_price_inr) < 0)) {
+      return res.status(400).json({ success: false, message: 'Price must be non-negative.' });
+    }
 
-    await db.run(
+    const result = await db.run(
       `UPDATE lens_usages SET
          name = COALESCE(?, name),
          description = COALESCE(?, description),
@@ -1192,6 +1717,7 @@ router.put('/lenses/usages/:id', requireRole('admin', 'optometrist'), async (req
        WHERE id = ?`,
       [name, description, base_price_inr !== undefined ? Number(base_price_inr) : null, is_active !== undefined ? Number(is_active) : null, id]
     );
+    if (result.changes === 0) return res.status(404).json({ success: false, message: 'Lens usage not found.' });
 
     await logAudit(req, 'UPDATE_LENS_USAGE', 'lens_usages', id, { name, base_price_inr, is_active });
     res.json({ success: true, message: 'Lens usage option updated successfully.' });
@@ -1200,23 +1726,90 @@ router.put('/lenses/usages/:id', requireRole('admin', 'optometrist'), async (req
   }
 });
 
-// PUT /api/admin/lenses/thicknesses/:id - Update Lens Thickness/Index Price & Guidance
+// Step 2: Prescription Configuration Options (Update fee, clinical bounds, status)
+router.put('/lenses/prescription-options/:id', requireRole('admin', 'optometrist'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, description, fee_inr, sph_min, sph_max, cyl_min, cyl_max, pd_min, pd_max, is_active } = req.body;
+    if (fee_inr !== undefined && (Number.isNaN(Number(fee_inr)) || Number(fee_inr) < 0)) {
+      return res.status(400).json({ success: false, message: 'Verification fee must be non-negative.' });
+    }
+
+    const result = await db.run(
+      `UPDATE lens_prescription_options SET
+         name = COALESCE(?, name),
+         description = COALESCE(?, description),
+         fee_inr = COALESCE(?, fee_inr),
+         sph_min = COALESCE(?, sph_min),
+         sph_max = COALESCE(?, sph_max),
+         cyl_min = COALESCE(?, cyl_min),
+         cyl_max = COALESCE(?, cyl_max),
+         pd_min = COALESCE(?, pd_min),
+         pd_max = COALESCE(?, pd_max),
+         is_active = COALESCE(?, is_active)
+       WHERE id = ?`,
+      [
+        name, description,
+        fee_inr !== undefined ? Number(fee_inr) : null,
+        sph_min !== undefined ? Number(sph_min) : null,
+        sph_max !== undefined ? Number(sph_max) : null,
+        cyl_min !== undefined ? Number(cyl_min) : null,
+        cyl_max !== undefined ? Number(cyl_max) : null,
+        pd_min !== undefined ? Number(pd_min) : null,
+        pd_max !== undefined ? Number(pd_max) : null,
+        is_active !== undefined ? Number(is_active) : null,
+        id
+      ]
+    );
+    if (result.changes === 0) return res.status(404).json({ success: false, message: 'Prescription option not found.' });
+
+    await logAudit(req, 'UPDATE_LENS_PRESCRIPTION_OPTION', 'lens_prescription_options', id, { name, fee_inr, is_active });
+    res.json({ success: true, message: 'Step 2 prescription configuration updated successfully.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// Step 3: Lens Thicknesses (Create & Update)
+router.post('/lenses/thicknesses', requireRole('admin', 'optometrist'), async (req, res) => {
+  try {
+    const { usage_id = 1, name, index_rating, description = '', price_inr = 0, recommended_sph_range = '', display_order = 0, is_active = 1 } = req.body;
+    if (!name || !index_rating || Number(price_inr) < 0 || Number.isNaN(Number(price_inr))) {
+      return res.status(400).json({ success: false, message: 'Name, index_rating, and non-negative price are required.' });
+    }
+    const result = await db.run(
+      `INSERT INTO lens_thicknesses (usage_id, name, index_rating, description, price_inr, recommended_sph_range, display_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [Number(usage_id), name.trim(), Number(index_rating), description, Number(price_inr), recommended_sph_range, Number(display_order), is_active ? 1 : 0]
+    );
+    await logAudit(req, 'CREATE_LENS_THICKNESS', 'lens_thicknesses', result.lastID, { name, index_rating, price_inr });
+    res.status(201).json({ success: true, message: 'Lens thickness option created.', id: result.lastID });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || 'Internal Server Error' });
+  }
+});
+
 router.put('/lenses/thicknesses/:id', requireRole('admin', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, price_inr, description, recommended_sph_range, recommendation_sph, is_active } = req.body;
+    const { name, price_inr, description, index_rating, recommended_sph_range, recommendation_sph, is_active } = req.body;
     const sphGuidance = recommended_sph_range !== undefined ? recommended_sph_range : recommendation_sph;
+    if (price_inr !== undefined && (Number.isNaN(Number(price_inr)) || Number(price_inr) < 0)) {
+      return res.status(400).json({ success: false, message: 'Price must be non-negative.' });
+    }
 
-    await db.run(
+    const result = await db.run(
       `UPDATE lens_thicknesses SET
          name = COALESCE(?, name),
+         index_rating = COALESCE(?, index_rating),
          price_inr = COALESCE(?, price_inr),
          description = COALESCE(?, description),
          recommended_sph_range = COALESCE(?, recommended_sph_range),
          is_active = COALESCE(?, is_active)
        WHERE id = ?`,
-      [name, price_inr !== undefined ? Number(price_inr) : null, description, sphGuidance, is_active !== undefined ? Number(is_active) : null, id]
+      [name, index_rating !== undefined ? Number(index_rating) : null, price_inr !== undefined ? Number(price_inr) : null, description, sphGuidance, is_active !== undefined ? Number(is_active) : null, id]
     );
+    if (result.changes === 0) return res.status(404).json({ success: false, message: 'Lens thickness not found.' });
 
     await logAudit(req, 'UPDATE_LENS_THICKNESS', 'lens_thicknesses', id, { name, price_inr, is_active });
     res.json({ success: true, message: 'Lens thickness index updated successfully.' });
@@ -1225,13 +1818,34 @@ router.put('/lenses/thicknesses/:id', requireRole('admin', 'optometrist'), async
   }
 });
 
-// PUT /api/admin/lenses/coatings/:id - Update Coating Price & Status
+// Step 4: Lens Coatings (Create & Update)
+router.post('/lenses/coatings', requireRole('admin', 'optometrist'), async (req, res) => {
+  try {
+    const { name, slug, description = '', price_inr = 0, display_order = 0, is_active = 1 } = req.body;
+    if (!name || Number(price_inr) < 0 || Number.isNaN(Number(price_inr))) {
+      return res.status(400).json({ success: false, message: 'Name and non-negative price are required.' });
+    }
+    const cleanSlug = (slug || name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const result = await db.run(
+      'INSERT INTO lens_coatings (name, slug, description, price_inr, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      [name.trim(), cleanSlug, description, Number(price_inr), Number(display_order), is_active ? 1 : 0]
+    );
+    await logAudit(req, 'CREATE_LENS_COATING', 'lens_coatings', result.lastID, { name, price_inr });
+    res.status(201).json({ success: true, message: 'Lens coating created.', id: result.lastID });
+  } catch (err) {
+    res.status(err.message && err.message.includes('UNIQUE') ? 409 : 500).json({ success: false, message: err.message || 'Internal Server Error' });
+  }
+});
+
 router.put('/lenses/coatings/:id', requireRole('admin', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { name, price_inr, description, is_active } = req.body;
+    if (price_inr !== undefined && (Number.isNaN(Number(price_inr)) || Number(price_inr) < 0)) {
+      return res.status(400).json({ success: false, message: 'Price must be non-negative.' });
+    }
 
-    await db.run(
+    const result = await db.run(
       `UPDATE lens_coatings SET
          name = COALESCE(?, name),
          price_inr = COALESCE(?, price_inr),
@@ -1240,6 +1854,7 @@ router.put('/lenses/coatings/:id', requireRole('admin', 'optometrist'), async (r
        WHERE id = ?`,
       [name, price_inr !== undefined ? Number(price_inr) : null, description, is_active !== undefined ? Number(is_active) : null, id]
     );
+    if (result.changes === 0) return res.status(404).json({ success: false, message: 'Lens coating not found.' });
 
     await logAudit(req, 'UPDATE_LENS_COATING', 'lens_coatings', id, { name, price_inr, is_active });
     res.json({ success: true, message: 'Lens coating updated successfully.' });
@@ -1565,7 +2180,7 @@ router.get('/appointments', async (req, res) => {
 });
 
 // PATCH /api/admin/appointments/:id/reschedule - Reschedule Appointment with Collision Prevention
-router.patch('/appointments/:id/reschedule', async (req, res) => {
+router.patch('/appointments/:id/reschedule', requireRole('admin', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { appointment_date, start_time } = req.body;
@@ -1619,7 +2234,7 @@ router.patch('/appointments/:id/reschedule', async (req, res) => {
 });
 
 // PATCH /api/admin/appointments/:id/status - Update Status or Consultation Notes
-router.patch('/appointments/:id/status', async (req, res) => {
+router.patch('/appointments/:id/status', requireRole('admin', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { status, notes } = req.body;
@@ -1662,7 +2277,7 @@ router.get('/enquiries', async (req, res) => {
 });
 
 // PATCH /api/admin/enquiries/:id/status - Update Enquiry Status
-router.patch('/enquiries/:id/status', async (req, res) => {
+router.patch('/enquiries/:id/status', requireRole('admin', 'staff', 'optometrist'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { status } = req.body;
@@ -1678,35 +2293,159 @@ router.patch('/enquiries/:id/status', async (req, res) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════
-// 11. SITE SETTINGS & OPERATIONAL CONFIGURATION
+// 11. SITE SETTINGS, LOGO BRANDING & OPERATING HOURS
 // ═════════════════════════════════════════════════════════════════════
 
-// GET /api/admin/settings - Read Site Settings
+// GET /api/admin/settings - Read Store Identity, Hours & Site Settings
 router.get('/settings', async (req, res) => {
   try {
-    const settings = await db.all('SELECT * FROM site_settings');
-    const store = await db.get('SELECT * FROM stores WHERE id = 1');
-    const hours = await db.all('SELECT * FROM store_hours WHERE store_id = 1 ORDER BY day_of_week ASC');
-    res.json({ success: true, settings, store, hours });
+    const data = await getPublicStoreSettings();
+    res.json({
+      success: true,
+      settings: data.rawSettingsList,
+      settingsMap: data.settings,
+      store: data.store,
+      hours: data.hours
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
 
-// PUT /api/admin/settings - Update Clinic & Store Settings (Admin Only)
+// PUT /api/admin/settings - Update Store Identity, Contact, Hours & Announcement (Admin Only)
 router.put('/settings', requireRole('admin'), validateBody(clinicSettingsSchema), async (req, res) => {
   try {
-    const { name, address, phone } = req.body;
-    await db.run(
-      'UPDATE stores SET name = ?, address = ?, phone = ? WHERE id = 1',
-      [name, address, phone]
-    );
+    const {
+      name, address, city, phone, whatsapp_number, email,
+      description, map_url, instagram_url, facebook_url,
+      announcement_text, slot_interval_minutes, hours
+    } = req.body;
 
-    const store = await db.get('SELECT * FROM stores WHERE id = 1');
-    await logAudit(req, 'UPDATE_CLINIC_SETTINGS', 'stores', 1, { name, address, phone });
-    res.json({ success: true, message: 'Clinic settings saved successfully.', store });
+    const existingStore = await db.get('SELECT * FROM stores WHERE id = 1');
+    const cleanWhatsapp = (whatsapp_number !== undefined && whatsapp_number !== null && whatsapp_number !== '')
+      ? whatsapp_number.trim()
+      : (existingStore?.whatsapp_number || phone.trim());
+
+    await db.transaction(async () => {
+      await db.run(
+        `UPDATE stores SET
+           name = ?,
+           address = ?,
+           city = COALESCE(?, city),
+           phone = ?,
+           whatsapp_number = ?,
+           email = ?,
+           description = ?,
+           map_url = ?,
+           instagram_url = ?,
+           facebook_url = ?,
+           slot_interval_minutes = COALESCE(?, slot_interval_minutes)
+         WHERE id = 1`,
+        [
+          name.trim(),
+          address.trim(),
+          city !== undefined && city !== '' ? city.trim() : null,
+          phone.trim(),
+          cleanWhatsapp,
+          email !== undefined ? (email || null) : (existingStore?.email || null),
+          description !== undefined ? (description || null) : (existingStore?.description || null),
+          map_url !== undefined ? (map_url || null) : (existingStore?.map_url || null),
+          instagram_url !== undefined ? (instagram_url || null) : (existingStore?.instagram_url || null),
+          facebook_url !== undefined ? (facebook_url || null) : (existingStore?.facebook_url || null),
+          slot_interval_minutes !== undefined ? Number(slot_interval_minutes) : null
+        ]
+      );
+
+      await db.run(
+        `INSERT OR REPLACE INTO site_settings (key, value, description, updated_at)
+         VALUES ('store_name', ?, 'Brand trading name', CURRENT_TIMESTAMP)`,
+        [name.trim()]
+      );
+      await db.run(
+        `INSERT OR REPLACE INTO site_settings (key, value, description, updated_at)
+         VALUES ('whatsapp_number', ?, 'Store WhatsApp business number', CURRENT_TIMESTAMP)`,
+        [cleanWhatsapp]
+      );
+      if (announcement_text !== undefined) {
+        await db.run(
+          `INSERT OR REPLACE INTO site_settings (key, value, description, updated_at)
+           VALUES ('announcement_text', ?, 'Header announcement message', CURRENT_TIMESTAMP)`,
+          [String(announcement_text || '').trim()]
+        );
+      }
+
+      if (Array.isArray(hours) && hours.length > 0) {
+        for (const h of hours) {
+          const existingDay = await db.get('SELECT id FROM store_hours WHERE store_id = 1 AND day_of_week = ?', [Number(h.day_of_week)]);
+          if (existingDay) {
+            await db.run(
+              'UPDATE store_hours SET open_time = ?, close_time = ?, is_closed = ? WHERE id = ?',
+              [h.open_time, h.close_time, h.is_closed ? 1 : 0, existingDay.id]
+            );
+          } else {
+            await db.run(
+              'INSERT INTO store_hours (store_id, day_of_week, open_time, close_time, is_closed) VALUES (1, ?, ?, ?, ?)',
+              [Number(h.day_of_week), h.open_time, h.close_time, h.is_closed ? 1 : 0]
+            );
+          }
+        }
+      }
+    });
+
+    const updated = await getPublicStoreSettings();
+    await logAudit(req, 'UPDATE_CLINIC_SETTINGS', 'stores', 1, { name, address, phone, whatsapp_number: cleanWhatsapp });
+    res.json({
+      success: true,
+      message: 'Store settings and branding saved successfully.',
+      store: updated.store,
+      hours: updated.hours,
+      settingsMap: updated.settings
+    });
   } catch (err) {
     console.error('Update Clinic Settings Error:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// POST /api/admin/settings/logo - Upload & Optimize Store Logo (Admin Only)
+router.post(
+  '/settings/logo',
+  requireRole('admin'),
+  handleImageUploadMiddleware(uploadMemory.single('logo')),
+  async (req, res) => {
+    let stored = null;
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'Logo image file is required (JPEG, PNG, WebP).' });
+      }
+      const existing = await db.get('SELECT logo_url FROM stores WHERE id = 1');
+      stored = await processAndStorePublicImage(req.file, { subdir: 'branding', prefix: 'store_logo', maxWidth: 600 });
+      const newUrl = `/${stored.imageUrl}`;
+      await db.run('UPDATE stores SET logo_url = ? WHERE id = 1', [newUrl]);
+      if (existing?.logo_url && existing.logo_url.startsWith('/images/branding/')) {
+        safeUnlink(resolveSafePublicPath(existing.logo_url));
+      }
+      await logAudit(req, 'UPLOAD_STORE_LOGO', 'stores', 1, { logo_url: newUrl });
+      res.json({ success: true, message: 'Store logo uploaded successfully.', logo_url: newUrl });
+    } catch (err) {
+      if (stored?.diskPath) safeUnlink(stored.diskPath);
+      const status = err.message && (err.message.includes('Invalid') || err.message.includes('Unsupported')) ? 400 : 500;
+      res.status(status).json({ success: false, message: err.message || 'Store logo upload failed.' });
+    }
+  }
+);
+
+// DELETE /api/admin/settings/logo - Remove Store Logo (Admin Only)
+router.delete('/settings/logo', requireRole('admin'), async (req, res) => {
+  try {
+    const existing = await db.get('SELECT logo_url FROM stores WHERE id = 1');
+    if (existing?.logo_url && existing.logo_url.startsWith('/images/branding/')) {
+      safeUnlink(resolveSafePublicPath(existing.logo_url));
+    }
+    await db.run('UPDATE stores SET logo_url = NULL WHERE id = 1');
+    await logAudit(req, 'REMOVE_STORE_LOGO', 'stores', 1, {});
+    res.json({ success: true, message: 'Store logo removed. Storefront will display the text wordmark.' });
+  } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });

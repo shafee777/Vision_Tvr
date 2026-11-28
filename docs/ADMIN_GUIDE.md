@@ -26,30 +26,29 @@ The Optii Atelier Admin (`/admin`) is organized into four operational groups:
 | Lens Pricing & Appointments Queue | Yes | Yes | No |
 | Team & Roles, Activity Log, Store Settings | Yes | No | No |
 
-## 3. Master SKU vs. Variant SKU
-- **Master Frame (`products`)** holds shared specifications: `master_sku`, `product_name`, `brand_name`, `shape_name`, `category_name`, `base_price_inr`, `gender`, `material`, `frame_fit`, `lens_width_mm`, `bridge_width_mm`, `temple_length_mm`.
-- **Colour Variant (`product_variants`)** holds per-colourway data: `variant_sku`, `color_name`, `color_hex`, `price_override_inr`, and canonical `stock_quantity`.
-- In Bulk Frame Import, multiple rows sharing the same `master_sku` automatically group into **one master frame** with **multiple colour variants**.
+## 3. Product Code (`prod_code`) vs. Internal Variant SKUs
+- **Frame (`products`)** holds shared specifications: `prod_code` (stored internally in `products.sku`), `product_name`, `brand_name`, `shape_name`, `category_name`, `base_price_inr`, `gender`, `material`, `frame_fit`, `frame_type`, `lens_width_mm`, `bridge_width_mm`, `temple_length_mm`, `frame_height_mm`, and `total_width_mm`.
+- **Colour Variant (`product_variants`)** holds per-colourway data (`color_name`, `price_override_inr`, `stock_quantity`) and internal identifiers (`sku`, `color_hex`, `is_active`) which are automatically generated/managed by the server when omitted by staff.
+- In both the **4-Step Single Frame Wizard** (`+ Add Single Frame`) and **Bulk Frame Import**, staff only enter `prod_code` and `color_name` — rows sharing the same `prod_code` automatically group into **one frame** with **multiple colour variants**.
 
-## 4. Catalogue Bulk Import CSV Template
-Supports UTF-8 (with or without BOM), CRLF/LF, quoted commas, and direct copy-paste from Excel / Google Sheets (TSV).
+## 4. Catalogue Bulk Import CSV Template & Single Frame Wizard
+Supports UTF-8 (with or without BOM), CRLF/LF, quoted commas, and direct copy-paste from Excel / Google Sheets (TSV). Downloading the Blank Catalogue Template (`GET /api/admin/imports/catalogue/template`) returns a genuinely blank CSV with header row only (0 prepopulated sample rows).
 
-**Headers:**
+**Blank Template Headers:**
 ```text
-master_sku,product_name,product_slug,description,brand_name,shape_name,category_name,base_price_inr,gender,material,frame_fit,lens_width_mm,bridge_width_mm,temple_length_mm,frame_height_mm,total_width_mm,variant_sku,color_name,color_hex,color_secondary_hex,price_override_inr,opening_stock,is_default
+prod_code,product_name,brand_name,category_name,shape_name,material,frame_type,frame_fit,gender,base_price_inr,description,color_name,price_override_inr,opening_stock,lens_width_mm,bridge_width_mm,temple_length_mm,frame_height_mm,total_width_mm
 ```
 
-**Demonstration Sample (do not insert demo rows into production DB):**
-```csv
-master_sku,product_name,product_slug,brand_name,shape_name,category_name,base_price_inr,gender,material,frame_fit,lens_width_mm,bridge_width_mm,temple_length_mm,variant_sku,color_name,color_hex,opening_stock,is_default
-OP-MIRA-01,Mira Round,mira-round,Optii Atelier,Round,Eyeglasses,4290,unisex,Acetate,Medium,49,20,145,OP-MIRA-BLK,Matte Black,#222222,12,1
-OP-MIRA-01,Mira Round,mira-round,Optii Atelier,Round,Eyeglasses,4290,unisex,Acetate,Medium,49,20,145,OP-MIRA-TOR,Tortoise,#70513B,6,0
-```
+**Single Frame Creation Wizard (`+ Add Single Frame`):**
+1. **Step 1 — Frame Info:** Name, `prod_code`, Brand, Category, Shape, Frame Type, Material, Fit, Gender, Base Price (₹), Description.
+2. **Step 2 — Measurements (mm):** `lens_width_mm` (30–75), `bridge_width_mm` (10–35), `temple_length_mm` (100–180), `frame_height_mm` (20–90, optional), `total_width_mm` (90–200, optional) with inline optical measurement diagram.
+3. **Step 3 — Colour & Stock:** `color_name`, `opening_stock`, `price_override_inr` (optional).
+4. **Step 4 — Photos (1–5):** Drag-and-drop or file picker for up to 5 JPEG/PNG/WebP images (max 5 MB each), live previews, image type selector, arrow reordering, `Primary` selection, removal, and atomic creation + server-side magic-byte/Jimp validation.
 
 **Validation Rules:**
-- Existing `master_sku`, `product_slug`, or `variant_sku` values are rejected (Create New Frames only — no silent overwrites).
+- Existing `prod_code` or derived `product_slug` values are rejected (Create New Frames only — no silent overwrites).
 - `brand_name`, `shape_name`, `category_name` must match existing active taxonomy records.
-- Rows sharing a `master_sku` must have identical master specifications.
+- Rows sharing a `prod_code` must have identical master specifications.
 - Valid `opening_stock > 0` writes an `inventory_movements` entry with `movement_type = 'replenishment'`.
 
 ## 5. Inventory Stock Count Import Workflow
@@ -62,7 +61,7 @@ OP-MIRA-01,Mira Round,mira-round,Optii Atelier,Round,Eyeglasses,4290,unisex,Acet
 
 ## 6. Key Admin & Import API Endpoints
 - `GET /api/admin/dashboard/analytics?days=7|30|90`
-- `GET /api/admin/imports/catalogue/template` & `/sample`
+- `GET /api/admin/imports/catalogue/template`
 - `POST /api/admin/imports/catalogue/validate` & `/commit`
 - `GET /api/admin/imports/inventory/template`
 - `POST /api/admin/imports/inventory/validate` & `/commit`
@@ -73,5 +72,6 @@ OP-MIRA-01,Mira Round,mira-round,Optii Atelier,Round,Eyeglasses,4290,unisex,Acet
 ```bash
 npm run migrate
 node scripts/test_admin_restructure.js
+node scripts/test_admin_improvements.js
 node scripts/test_optii_api.js
 ```

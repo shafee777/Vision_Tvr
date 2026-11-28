@@ -164,22 +164,38 @@ img {
 }
 
 .brand-logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   color: var(--color-ink);
-  text-transform: uppercase;
   user-select: none;
+  min-width: 0;
+  max-width: 280px;
 }
 
-.brand-logo span {
-  font-weight: 300;
-  letter-spacing: 0.05em;
+.brand-logo-img {
+  height: 30px;
+  width: auto;
+  max-width: 110px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.brand-logo-text {
   font-size: 18px;
-  color: var(--color-ink-secondary);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-links-desktop {
@@ -715,6 +731,13 @@ img {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .product-img-studio,
+  .product-img-model {
+    transition: none !important;
+  }
+}
+
 .product-wishlist-btn {
   position: absolute;
   top: 10px;
@@ -1180,12 +1203,35 @@ img {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 3rem;
+  align-items: start;
 }
 
 .footer-brand-col {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 14px;
+  min-width: 0;
+}
+
+.footer-social-links {
+  display: flex;
+  gap: 14px;
+  margin-top: 2px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.footer-social-links a {
+  color: var(--color-ink-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast);
+}
+
+.footer-social-links a:hover,
+.footer-social-links a:focus-visible {
+  color: var(--color-ink);
 }
 
 .footer-tagline {
@@ -1208,11 +1254,12 @@ img {
   width: fit-content;
 }
 
-.whatsapp-direct-badge span {
+.whatsapp-direct-badge span:first-child {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: var(--color-whatsapp);
+  flex-shrink: 0;
 }
 
 .footer-col-title {
@@ -1231,12 +1278,17 @@ img {
 
 .footer-link {
   font-size: 14px;
+  line-height: 1.45;
   color: var(--color-ink-secondary);
+  overflow-wrap: anywhere;
   transition: color var(--transition-fast);
 }
 
-.footer-link:hover {
+.footer-link:hover,
+.footer-link:focus-visible {
   color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .footer-bottom-strip {
@@ -1245,10 +1297,12 @@ img {
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-border);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   font-size: 12px;
-  color: var(--color-ink-muted);
+  color: var(--color-ink-secondary);
 }
 
 /* ─── 15. RESPONSIVE MEDIA QUERIES ─── */
@@ -1290,7 +1344,17 @@ img {
   }
 
   .brand-logo {
-    font-size: 20px !important;
+    gap: 8px !important;
+    max-width: 185px;
+  }
+
+  .brand-logo-img {
+    height: 24px;
+    max-width: 80px;
+  }
+
+  .brand-logo-text {
+    font-size: 16px;
   }
 
   .nav-links-desktop, 

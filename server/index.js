@@ -54,6 +54,7 @@ apiRouter.use('/products', require('./routes/products.routes'));
 apiRouter.use('/lenses', require('./routes/lenses.routes'));
 apiRouter.use('/prescriptions', require('./routes/prescriptions.routes'));
 apiRouter.use('/stores', require('./routes/stores.routes'));
+apiRouter.use('/settings', require('./routes/settings.routes'));
 apiRouter.use('/appointments', require('./routes/appointments.routes'));
 apiRouter.use('/enquiries', require('./routes/enquiries.routes'));
 apiRouter.use('/orders', require('./routes/orders.routes'));
@@ -82,6 +83,12 @@ app.use('/api', apiRouter);
 // Global Error Handler (Production-safe error sanitization)
 app.use((err, req, res, next) => {
   console.error('[Optii Server Error]:', err);
+  if (err.name === 'MulterError') {
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Uploaded file exceeds the 5 MB size limit.'
+      : (err.message || 'File upload rejected.');
+    return res.status(400).json({ success: false, message: msg });
+  }
   const status = err.status || 500;
   const isProd = config.IS_PRODUCTION;
   res.status(status).json({

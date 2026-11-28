@@ -163,10 +163,33 @@ router.get('/:token', async (req, res) => {
   }
 });
 
-// DELETE /api/prescriptions/:token - Delete prescription (Secure GDPR/Retention handling)
+// DELETE /api/prescriptions/:token - Delete prescription (Authorized personnel or matching client session token)
 router.delete('/:token', async (req, res) => {
   try {
     const { token } = req.params;
+    const authHeader = req.headers.authorization;
+    let isAuthorized = false;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const jwtToken = authHeader.split(' ')[1];
+        jwt.verify(jwtToken, config.JWT_SECRET);
+        isAuthorized = true;
+      } catch (_) {}
+    }
+
+    if (req.headers['x-prescription-token'] === token) {
+      isAuthorized = true;
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        error: 'UNAUTHORIZED_ACCESS',
+        message: 'Deleting prescription documents requires authorization.'
+      });
+    }
+
     const record = await db.get('SELECT * FROM prescriptions WHERE token = ?', [token]);
     if (!record) {
       return res.status(404).json({ success: false, message: 'Prescription record not found.' });

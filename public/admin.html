@@ -354,7 +354,7 @@
               <div class="card-table-wrap">
                 <div class="table-filter-bar">
                   <div class="table-filter-group">
-                    <input type="text" id="products-search-input" class="admin-search-input" placeholder="Search frame name or SKU…" oninput="OptiiAdmin.debouncedProductSearch(this.value)" />
+                    <input type="text" id="products-search-input" class="admin-search-input" placeholder="Search frame name or prod code…" oninput="OptiiAdmin.debouncedProductSearch(this.value)" />
                     <select id="products-filter-brand" class="admin-select" onchange="OptiiAdmin.updateProductFilter('brand', this.value)" aria-label="Filter by brand"></select>
                     <select id="products-filter-category" class="admin-select" onchange="OptiiAdmin.updateProductFilter('category', this.value)" aria-label="Filter by category"></select>
                     <select id="products-filter-shape" class="admin-select" onchange="OptiiAdmin.updateProductFilter('shape', this.value)" aria-label="Filter by shape"></select>
@@ -377,7 +377,7 @@
                   <thead>
                     <tr>
                       <th>Frame</th>
-                      <th>Master SKU</th>
+                      <th>Prod Code</th>
                       <th>Brand</th>
                       <th>Category</th>
                       <th>Shape</th>
@@ -412,12 +412,10 @@
                   <div class="panel-header">
                     <div>
                       <div class="panel-title">Prepare Your Spreadsheet</div>
-                      <div class="panel-subtitle">One row per colour variant. Rows sharing the same Master SKU automatically group under one frame.</div>
+                      <div class="panel-subtitle">One row per colour variant. Rows sharing the same Product Code (<code>prod_code</code>) automatically group under one frame.</div>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                      <button type="button" class="btn-primary btn-sm" onclick="OptiiAdmin.downloadFriendlyCatalogueTemplate()">Download Excel Template with Examples (CSV)</button>
-                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(false)">Blank Technical Template</button>
-                      <button type="button" class="btn-secondary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate(true)">Legacy Sample CSV</button>
+                      <button type="button" class="btn-primary btn-sm" onclick="OptiiAdmin.downloadCatalogueTemplate()">Download Blank Catalogue Template (CSV)</button>
                     </div>
                   </div>
 
@@ -1122,22 +1120,27 @@
       </div>
       <form id="new-product-form" onsubmit="OptiiAdmin.handleCreateProduct(event)" novalidate>
         <div class="admin-modal-body">
-          <div id="new-prod-error-banner" class="error-list-box" style="display:none;margin-bottom:12px;"></div>
+          <div class="wizard-steps-bar" role="tablist" aria-label="Single frame creation steps" style="margin-bottom:14px;">
+            <button type="button" class="wizard-step-pill active" data-newprod-step-pill="1" role="tab" aria-selected="true" onclick="OptiiAdmin.goToNewProductStep(1)">1. Frame Info</button>
+            <button type="button" class="wizard-step-pill" data-newprod-step-pill="2" role="tab" aria-selected="false" onclick="OptiiAdmin.goToNewProductStep(2)">2. Measurements</button>
+            <button type="button" class="wizard-step-pill" data-newprod-step-pill="3" role="tab" aria-selected="false" onclick="OptiiAdmin.goToNewProductStep(3)">3. Colour &amp; Stock</button>
+            <button type="button" class="wizard-step-pill" data-newprod-step-pill="4" role="tab" aria-selected="false" onclick="OptiiAdmin.goToNewProductStep(4)">4. Photos (1–5)</button>
+          </div>
 
-          <div class="form-section-box">
-            <div class="form-section-heading">1. Master Frame Information</div>
-            <div class="form-grid-3">
+          <div id="new-prod-error-banner" class="error-list-box" role="alert" style="display:none;margin-bottom:12px;"></div>
+
+          <!-- Step 1: Frame Information -->
+          <div class="form-section-box" data-newprod-step-pane="1" style="display:block;">
+            <div class="form-section-heading">1. Frame Information</div>
+            <div class="form-grid-2">
               <div class="form-group">
                 <label class="form-label" for="new-prod-name">Frame Name *</label>
-                <input type="text" id="new-prod-name" name="name" class="form-control" placeholder="e.g. Akira Bold Round" minlength="2" required oninput="OptiiAdmin.handleNewProdNameInput(this.value)" />
+                <input type="text" id="new-prod-name" name="name" class="form-control" placeholder="e.g. Akira Bold Round" minlength="2" required />
               </div>
               <div class="form-group">
-                <label class="form-label" for="new-prod-slug">URL Slug</label>
-                <input type="text" id="new-prod-slug" name="slug" class="form-control" placeholder="auto-generated from name" oninput="this.dataset.manualEdited = '1'" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="new-prod-sku">Master Frame SKU *</label>
-                <input type="text" id="new-prod-sku" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01" minlength="2" required oninput="OptiiAdmin.autoGenerateVariantSku()" />
+                <label class="form-label" for="new-prod-code">Product Code (<code>prod_code</code>) *</label>
+                <input type="text" id="new-prod-code" name="prod_code" class="form-control" placeholder="e.g. OPT-AKR-01" minlength="2" required />
+                <div style="font-size:11px;color:var(--ink-secondary);margin-top:3px;">Unique frame code used to group colourways. Variant SKUs are generated automatically.</div>
               </div>
             </div>
             <div class="form-grid-3">
@@ -1167,7 +1170,7 @@
                 </select>
               </div>
             </div>
-            <div class="form-grid-3">
+            <div class="form-grid-2">
               <div class="form-group">
                 <label class="form-label" for="new-prod-gender">Target Gender *</label>
                 <select id="new-prod-gender" name="gender" class="form-control" required>
@@ -1180,11 +1183,6 @@
                 <label class="form-label" for="new-prod-price">Base Retail Price (₹ INR) *</label>
                 <input type="number" id="new-prod-price" name="base_price_inr" class="form-control" placeholder="4500" min="1" required />
               </div>
-              <div class="form-group" style="display:flex;align-items:flex-end;">
-                <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding-bottom:8px;cursor:pointer;">
-                  <input type="checkbox" name="is_active" checked /> Active on Storefront
-                </label>
-              </div>
             </div>
             <div class="form-group">
               <label class="form-label" for="new-prod-desc">Description</label>
@@ -1192,62 +1190,103 @@
             </div>
           </div>
 
-          <div class="form-section-box">
-            <div class="form-section-heading">2. Optical Millimeter Dimensions</div>
+          <!-- Step 2: Frame Measurements (mm) -->
+          <div class="form-section-box" data-newprod-step-pane="2" style="display:none;">
+            <div class="form-section-heading">2. Frame Measurements (in Millimeters — mm)</div>
+            <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--bg-subtle);border:1px solid var(--border-light);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+              <svg viewBox="0 0 280 120" fill="none" stroke="currentColor" stroke-width="1.5" style="width:200px;flex-shrink:0;background:#fff;border:1px solid var(--border-light);border-radius:6px;padding:4px;" aria-label="Optical frame measurement diagram">
+                <rect x="26" y="28" width="66" height="44" rx="10" stroke="#111827" stroke-width="2" />
+                <rect x="114" y="28" width="66" height="44" rx="10" stroke="#111827" stroke-width="2" />
+                <path d="M92 44 C98 38, 108 38, 114 44" stroke="#111827" stroke-width="2" />
+                <line x1="16" y1="42" x2="26" y2="42" stroke="#111827" stroke-width="2" />
+                <line x1="180" y1="42" x2="190" y2="42" stroke="#111827" stroke-width="2" />
+                <path d="M190 42 L254 42 C262 42, 266 50, 262 62" stroke="#111827" stroke-width="2" />
+                <line x1="26" y1="84" x2="92" y2="84" stroke="#2563eb" />
+                <text x="59" y="96" font-size="9" text-anchor="middle" fill="#1d4ed8" stroke="none" font-family="sans-serif">Lens Width</text>
+                <line x1="92" y1="20" x2="114" y2="20" stroke="#059669" />
+                <text x="103" y="14" font-size="9" text-anchor="middle" fill="#047857" stroke="none" font-family="sans-serif">Bridge</text>
+                <line x1="196" y1="28" x2="196" y2="72" stroke="#7c3aed" />
+                <text x="200" y="54" font-size="8.5" fill="#6d28d9" stroke="none" font-family="sans-serif">Height</text>
+                <line x1="16" y1="108" x2="190" y2="108" stroke="#374151" stroke-dasharray="3 2" />
+                <text x="103" y="117" font-size="9" text-anchor="middle" fill="#111827" stroke="none" font-family="sans-serif">Total Width</text>
+              </svg>
+              <div style="flex:1;min-width:200px;font-size:12px;color:var(--ink-secondary);line-height:1.5;">
+                Check the inside of the temple arm (e.g. <strong>51 □ 20 – 145</strong>) or measure with a ruler in <strong>mm</strong>.
+              </div>
+            </div>
             <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Lens Width (mm) *</label><input type="number" name="lens_width_mm" class="form-control" value="51" min="30" max="75" required /></div>
-              <div class="form-group"><label class="form-label">Bridge Width (mm) *</label><input type="number" name="bridge_width_mm" class="form-control" value="20" min="10" max="35" required /></div>
-              <div class="form-group"><label class="form-label">Temple Length (mm) *</label><input type="number" name="temple_length_mm" class="form-control" value="145" min="100" max="180" required /></div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-lens-width">Lens Width (mm) *</label>
+                <input type="number" id="new-prod-lens-width" name="lens_width_mm" class="form-control" value="51" min="30" max="75" required />
+                <div style="font-size:11px;color:var(--ink-secondary);margin-top:2px;">Horizontal width of one lens (30–75 mm)</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-bridge-width">Bridge Width (mm) *</label>
+                <input type="number" id="new-prod-bridge-width" name="bridge_width_mm" class="form-control" value="20" min="10" max="35" required />
+                <div style="font-size:11px;color:var(--ink-secondary);margin-top:2px;">Distance between lenses across nose (10–35 mm)</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-temple-length">Temple Length (mm) *</label>
+                <input type="number" id="new-prod-temple-length" name="temple_length_mm" class="form-control" value="145" min="100" max="180" required />
+                <div style="font-size:11px;color:var(--ink-secondary);margin-top:2px;">Arm length from hinge to ear tip (100–180 mm)</div>
+              </div>
             </div>
             <div class="form-grid-2">
-              <div class="form-group"><label class="form-label">Frame Height (mm, optional)</label><input type="number" name="frame_height_mm" class="form-control" placeholder="e.g. 42" min="20" max="90" /></div>
-              <div class="form-group"><label class="form-label">Total Frame Width (mm, optional)</label><input type="number" name="total_width_mm" class="form-control" placeholder="e.g. 138" min="90" max="200" /></div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-frame-height">Frame Height (mm, optional)</label>
+                <input type="number" id="new-prod-frame-height" name="frame_height_mm" class="form-control" placeholder="e.g. 42" min="20" max="90" />
+                <div style="font-size:11px;color:var(--ink-secondary);margin-top:2px;">Vertical height of the lens rim (20–90 mm)</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-prod-total-width">Total Width (mm, optional)</label>
+                <input type="number" id="new-prod-total-width" name="total_width_mm" class="form-control" placeholder="e.g. 138" min="90" max="200" />
+                <div style="font-size:11px;color:var(--ink-secondary);margin-top:2px;">Full front width hinge-to-hinge (90–200 mm)</div>
+              </div>
             </div>
           </div>
 
-          <div class="form-section-box">
-            <div class="form-section-heading">3. Initial Colour Variant &amp; Opening Stock</div>
+          <!-- Step 3: Initial Colour & Opening Stock -->
+          <div class="form-section-box" data-newprod-step-pane="3" style="display:none;">
+            <div class="form-section-heading">3. Colourway &amp; Opening Stock</div>
+            <p style="font-size:12px;color:var(--ink-secondary);margin-bottom:12px;">Enter the primary colourway for this frame. You can add additional colourways anytime from <strong>Manage &amp; Variants</strong>.</p>
             <div class="form-grid-3">
               <div class="form-group">
                 <label class="form-label" for="new-prod-color-name">Colour Name *</label>
-                <input type="text" id="new-prod-color-name" name="initial_color_name" class="form-control" placeholder="Matte Black" required oninput="OptiiAdmin.autoGenerateVariantSku()" />
+                <input type="text" id="new-prod-color-name" name="initial_color_name" class="form-control" placeholder="e.g. Matte Black or Tortoise" required />
               </div>
               <div class="form-group">
-                <label class="form-label" for="new-prod-var-sku">Variant SKU *</label>
-                <input type="text" id="new-prod-var-sku" name="initial_variant_sku" class="form-control" placeholder="e.g. OPT-AKR-01-BLK" required oninput="this.dataset.manualEdited = '1'" />
+                <label class="form-label" for="new-prod-opening-stock">Opening Stock *</label>
+                <input type="number" id="new-prod-opening-stock" name="initial_opening_stock" class="form-control" value="10" min="0" required />
               </div>
               <div class="form-group">
-                <label class="form-label" for="new-prod-color-hex">Colour Hex (#RRGGBB) *</label>
-                <div style="display:flex;gap:6px;align-items:center;">
-                  <input type="color" id="new-prod-color-picker" value="#111111" style="width:38px;height:36px;padding:2px;border:1px solid var(--border-medium);border-radius:4px;cursor:pointer;" oninput="OptiiAdmin.updateNewProdColorHex('picker')" aria-label="Pick colour" />
-                  <input type="text" id="new-prod-color-hex" name="initial_color_hex" class="form-control" value="#111111" placeholder="#111111" required oninput="OptiiAdmin.updateNewProdColorHex('text')" />
-                </div>
+                <label class="form-label" for="new-prod-price-override">Variant Price Override (₹, optional)</label>
+                <input type="number" id="new-prod-price-override" name="initial_price_override" class="form-control" placeholder="Leave blank for Base Price" min="1" />
               </div>
-            </div>
-            <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Secondary Hex (Optional)</label><input type="text" name="initial_color_secondary_hex" class="form-control" placeholder="#D4A373" /></div>
-              <div class="form-group"><label class="form-label">Opening Stock</label><input type="number" name="initial_opening_stock" class="form-control" value="10" min="0" /></div>
-              <div class="form-group"><label class="form-label">Variant Price Override (₹)</label><input type="number" name="initial_price_override" class="form-control" placeholder="Blank = Base price" min="1" /></div>
             </div>
           </div>
 
-          <div class="form-section-box">
+          <!-- Step 4: Product Images (Up to 5) -->
+          <div class="form-section-box" data-newprod-step-pane="4" style="display:none;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div class="form-section-heading" style="margin-bottom:0;">4. Product Images (1 to 5 Photos)</div>
+              <div class="form-section-heading" style="margin-bottom:0;">4. Product Images (Up to 5 Photos)</div>
               <span id="new-prod-images-count" style="font-size:12px;font-weight:700;color:var(--ink-secondary);">0 / 5 selected</span>
             </div>
-            <div class="dropzone-box" id="new-prod-images-dropzone" tabindex="0" role="button" aria-label="Upload 1 to 5 frame photos">
-              <div style="font-weight:700;font-size:13px;">Drop 1 to 5 images here or click to browse</div>
-              <div style="font-size:12px;color:var(--ink-secondary);margin-top:4px;">JPEG, PNG, or WebP (max 5 MB each). Image #1 is Primary; Image #2 powers storefront hover swap.</div>
+            <div class="dropzone-box" id="new-prod-images-dropzone" tabindex="0" role="button" aria-label="Upload up to 5 frame photos">
+              <div style="font-weight:700;font-size:13px;">Drop up to 5 images here or click to browse</div>
+              <div style="font-size:12px;color:var(--ink-secondary);margin-top:4px;">JPEG, PNG, or WebP (max 5 MB each). Use <strong>Set Primary</strong> or arrows to reorder.</div>
               <input type="file" id="new-prod-images-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" />
             </div>
             <div id="new-prod-images-error" style="font-size:12px;color:#991b1b;margin-top:6px;"></div>
             <div id="new-prod-images-preview" class="staged-images-grid"></div>
           </div>
         </div>
-        <div class="admin-modal-footer">
+        <div class="admin-modal-footer" style="justify-content:space-between;">
           <button type="button" class="btn-secondary" onclick="OptiiAdmin.closeModal('modal-new-product')">Cancel</button>
-          <button type="submit" class="btn-primary">Create Master Frame</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="btn-secondary" id="btn-newprod-prev" onclick="OptiiAdmin.prevNewProductStep()" style="display:none;">← Previous</button>
+            <button type="button" class="btn-primary" id="btn-newprod-next" onclick="OptiiAdmin.nextNewProductStep()">Next →</button>
+            <button type="submit" class="btn-primary" id="btn-newprod-submit" style="display:none;">Create Frame</button>
+          </div>
         </div>
       </form>
     </div>

@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
       fit,
       material,
       color,
+      availability,
       min_price,
       max_price,
       search,
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
       offset = 0
     } = req.query;
 
-    let conditions = ['p.is_active = 1'];
+    let conditions = ['p.is_active = 1', 'b.is_active = 1', 's.is_active = 1', 'c.is_active = 1'];
     let params = [];
 
     if (category) {
@@ -35,6 +36,12 @@ router.get('/', async (req, res) => {
     if (brand) {
       conditions.push('b.slug = ?');
       params.push(brand);
+    }
+    if (availability === 'in_stock') {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM product_variants v_av
+        WHERE v_av.product_id = p.id AND v_av.is_active = 1 AND v_av.stock_quantity > 0
+      )`);
     }
     if (gender && gender !== 'all') {
       conditions.push('(p.gender = ? OR p.gender = "unisex")');
@@ -132,7 +139,7 @@ router.get('/', async (req, res) => {
           SELECT img.id, img.variant_id, img.image_type, img.image_url, img.alt_text, img.display_order
           FROM product_images img
           WHERE img.variant_id IN (${vPlaceholders})
-          ORDER BY img.display_order ASC
+          ORDER BY img.display_order ASC, img.id ASC
         `;
         const images = await db.all(imagesSql, variantIds);
         for (const img of images) {
@@ -143,11 +150,11 @@ router.get('/', async (req, res) => {
 
       for (const v of variants) {
         v.images = imagesByVariant[v.id] || [];
-        // Primary and secondary photo assignment for instant hover swap
+        // Primary and second photo follow admin display_order (fallback to studio_front/model_on_face)
         const studio = v.images.find(i => i.image_type === 'studio_front');
         const model = v.images.find(i => i.image_type === 'model_on_face');
-        v.primary_image = studio ? studio.image_url : (v.images[0] ? v.images[0].image_url : '');
-        v.hover_image = model ? model.image_url : v.primary_image;
+        v.primary_image = v.images[0] ? v.images[0].image_url : (studio ? studio.image_url : '');
+        v.hover_image = v.images[1] ? v.images[1].image_url : (model ? model.image_url : v.primary_image);
 
         if (!variantsByProduct[v.product_id]) variantsByProduct[v.product_id] = [];
         variantsByProduct[v.product_id].push(v);
@@ -208,13 +215,13 @@ router.get('/:slug', async (req, res) => {
 
     for (const v of variants) {
       v.images = await db.all(
-        `SELECT * FROM product_images WHERE variant_id = ? ORDER BY display_order ASC`,
+        `SELECT * FROM product_images WHERE variant_id = ? ORDER BY display_order ASC, id ASC`,
         [v.id]
       );
       const studio = v.images.find(i => i.image_type === 'studio_front');
       const model = v.images.find(i => i.image_type === 'model_on_face');
-      v.primary_image = studio ? studio.image_url : (v.images[0] ? v.images[0].image_url : '');
-      v.hover_image = model ? model.image_url : v.primary_image;
+      v.primary_image = v.images[0] ? v.images[0].image_url : (studio ? studio.image_url : '');
+      v.hover_image = v.images[1] ? v.images[1].image_url : (model ? model.image_url : v.primary_image);
     }
 
     product.variants = variants;

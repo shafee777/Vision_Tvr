@@ -16,13 +16,13 @@
   <!-- 1. HEADER (60PX) -->
   <header class="site-header" id="site-header">
     <div class="header-left">
-      <a href="/" class="brand-logo">
-        <span class="brand-name">Vision</span>
-        <span class="brand-sub">OPTICALS</span>
+      <a href="/" class="brand-logo" data-store-logo-slot>
+        <span class="brand-name" data-store-name>Vision Opticals</span>
       </a>
       <nav class="nav-links-desktop">
         <a class="nav-item" href="/#glasses">Glasses</a>
         <a class="nav-item" href="/#sunglasses">Sunglasses</a>
+        <a class="nav-item" href="/#eyecare">Eye Care</a>
         <a class="nav-item active" href="/track">Track Order</a>
       </nav>
     </div>
@@ -77,9 +77,35 @@
   <!-- 4. FOOTER -->
   <footer class="site-footer" style="margin-top: auto;">
     <div class="footer-top-grid">
+      <div class="footer-brand-col">
+        <a href="/" class="brand-logo" data-store-logo-slot><span data-store-name>Vision Opticals</span></a>
+        <p class="footer-tagline" data-store-desc>Architectural optical retail store. Handcrafted bio-acetates, titanium wireframes and precision optometry eye testing.</p>
+        <a class="whatsapp-direct-badge" data-store-whatsapp-link href="https://wa.me/919486552324" target="_blank">
+          <span></span> <span data-store-whatsapp-label>WhatsApp Concierge: +91 94865 52324</span>
+        </a>
+        <div class="footer-social-links">
+          <a href="#map" data-store-map-link target="_blank" rel="noopener noreferrer" style="display:none;">Google Maps</a>
+          <a href="#instagram" data-store-instagram target="_blank" rel="noopener noreferrer" style="display:none;">Instagram</a>
+          <a href="#facebook" data-store-facebook target="_blank" rel="noopener noreferrer" style="display:none;">Facebook</a>
+        </div>
+      </div>
       <div>
-        <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Vision Opticals</div>
-        <p style="font-size: 13px; color: var(--color-ink-secondary); line-height: 1.5;">Handcrafted frames, bio-acetate, pure titanium and custom German-calibrated prescription lenses.</p>
+        <div class="footer-col-title">Collections</div>
+        <div class="footer-links-list">
+          <a class="footer-link" href="/#glasses">All Glasses</a>
+          <a class="footer-link" href="/#sunglasses">Sunglasses</a>
+          <a class="footer-link" href="/#accessories">Accessories</a>
+          <a class="footer-link" href="/#contact-lenses">Contact Lenses</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Clinic &amp; Care</div>
+        <div class="footer-links-list">
+          <a class="footer-link" href="/#book">Book Eye Test</a>
+          <a class="footer-link" href="/#hours" data-store-hours>Store Hours: Mon–Sat 10:00–20:00</a>
+          <a class="footer-link" href="/#address" data-store-address>12 Kamalalayam West, Thiruvarur</a>
+          <a class="footer-link" href="mailto:care@optii.in" data-store-email>care@optii.in</a>
+        </div>
       </div>
       <div>
         <div class="footer-col-title">Customer Care</div>
@@ -87,17 +113,26 @@
           <a class="footer-link" href="/track">Track Your Order</a>
           <a class="footer-link" href="/#returns">30-Day Return Guarantee</a>
           <a class="footer-link" href="/#shipping">Complimentary Courier Across India</a>
+          <a class="footer-link" href="/#warranty">1-Year Lens Coating Warranty</a>
+          <a class="footer-link" href="/#faq">Frequently Asked Questions</a>
         </div>
       </div>
     </div>
     <div class="footer-bottom-strip">
-      <div>© 2026 Vision Opticals. All rights reserved.</div>
-      <div>Precision Optics · Thiruvarur Store · ISO 9001 Certified Clinic</div>
+      <div>© 2026 <span data-store-name>Vision Opticals</span>. All rights reserved.</div>
+      <div><span data-store-name>Vision Opticals</span> · <span data-store-address>Thiruvarur</span></div>
     </div>
   </footer>
 
   <script src="/js/optii-api.js"></script>
   <script src="/js/optii-cart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.OptiiAPI && typeof OptiiAPI.hydrateStorefrontBranding === 'function') {
+        OptiiAPI.hydrateStorefrontBranding();
+      }
+    });
+  </script>
   <script>
     async function handleTrackForm(e) {
       if (e) e.preventDefault();

@@ -11,22 +11,24 @@ if (!fs.existsSync(config.UPLOAD_DIR)) {
 // Multer memory storage (allows Jimp to optimize before writing to disk)
 const imageStorage = multer.memoryStorage();
 
-// File filter for images
+// File filter for images (JPEG, PNG, WebP only — matches imageProcessor.js)
 const imageFileFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png|webp|gif/i;
+  const allowed = /jpeg|jpg|png|webp/i;
   const ext = path.extname(file.originalname).toLowerCase();
   const mime = file.mimetype;
 
-  if (allowed.test(ext) || allowed.test(mime)) {
+  if (allowed.test(ext) && allowed.test(mime)) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files (JPG, PNG, WEBP, GIF) are allowed.'));
+    const err = new Error('Only JPEG, PNG, and WebP image files are allowed.');
+    err.status = 400;
+    cb(err);
   }
 };
 
 const uploadImages = multer({
   storage: imageStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit (matches UI & imageProcessor)
   fileFilter: imageFileFilter
 });
 

@@ -10,29 +10,25 @@ import { requestConfirmation, showToast } from '../shared/notifications.js';
 import { loadFrameCatalog, switchCatalogSubtab } from './frames.js';
 
 const CATALOGUE_FIELDS = [
-  { key: 'master_sku', label: 'Master SKU', required: true },
+  { key: 'prod_code', label: 'Product Code (prod_code)', required: true },
   { key: 'product_name', label: 'Frame Name', required: true },
-  { key: 'product_slug', label: 'Slug', required: false },
   { key: 'brand_name', label: 'Brand', required: true },
-  { key: 'shape_name', label: 'Shape', required: true },
   { key: 'category_name', label: 'Category', required: true },
-  { key: 'base_price_inr', label: 'Base Price (₹)', required: true },
-  { key: 'gender', label: 'Gender', required: false },
+  { key: 'shape_name', label: 'Shape', required: true },
   { key: 'material', label: 'Material', required: true },
+  { key: 'frame_type', label: 'Frame Type', required: false },
   { key: 'frame_fit', label: 'Fit', required: true },
-  { key: 'lens_width_mm', label: 'Lens (mm)', required: true },
-  { key: 'bridge_width_mm', label: 'Bridge (mm)', required: true },
-  { key: 'temple_length_mm', label: 'Temple (mm)', required: true },
-  { key: 'frame_height_mm', label: 'Height (mm)', required: false },
-  { key: 'total_width_mm', label: 'Total Width (mm)', required: false },
+  { key: 'gender', label: 'Gender', required: false },
+  { key: 'base_price_inr', label: 'Base Price (₹)', required: true },
   { key: 'description', label: 'Description', required: false },
-  { key: 'variant_sku', label: 'Variant SKU', required: true },
   { key: 'color_name', label: 'Colour Name', required: true },
-  { key: 'color_hex', label: 'Hex (#RRGGBB)', required: true },
-  { key: 'color_secondary_hex', label: '2nd Hex', required: false },
   { key: 'price_override_inr', label: 'Variant Price (₹)', required: false },
   { key: 'opening_stock', label: 'Opening Stock', required: false },
-  { key: 'is_default', label: 'Default (0/1)', required: false }
+  { key: 'lens_width_mm', label: 'Lens Width (mm)', required: true },
+  { key: 'bridge_width_mm', label: 'Bridge Width (mm)', required: true },
+  { key: 'temple_length_mm', label: 'Temple Length (mm)', required: true },
+  { key: 'frame_height_mm', label: 'Frame Height (mm)', required: false },
+  { key: 'total_width_mm', label: 'Total Width (mm)', required: false }
 ];
 
 const importState = {
@@ -89,11 +85,11 @@ export function resetCatalogueImport() {
   renderCatalogueWizardState();
 }
 
-export async function downloadCatalogueTemplate(sample = false) {
+export async function downloadCatalogueTemplate() {
   try {
     await downloadAuthenticatedCsv(
-      sample ? '/imports/catalogue/sample' : '/imports/catalogue/template',
-      sample ? 'optii_catalogue_sample.csv' : 'optii_catalogue_blank_template.csv'
+      '/imports/catalogue/template',
+      'vision_opticals_catalogue_blank_template.csv'
     );
   } catch (err) {
     showToast(err.message || 'Failed to download template.', 'error');
@@ -257,7 +253,7 @@ function renderPreviewStep() {
   const errors = val?.errors || [];
   const summary = val?.summary || {
     total_rows: importState.mappedRows.length,
-    frames_detected: new Set(importState.mappedRows.map(r => r.master_sku).filter(Boolean)).size,
+    frames_detected: new Set(importState.mappedRows.map(r => r.prod_code || r.master_sku).filter(Boolean)).size,
     variants_detected: importState.mappedRows.length,
     valid_rows: 0,
     warning_count: 0,
@@ -309,6 +305,10 @@ function renderPreviewStep() {
     onCellChange: (rowIdx, field, newValue) => {
       importState.mappedRows[rowIdx][field] = newValue;
       importState.validation = null;
+      const btn = document.getElementById('btn-cat-proceed-confirm');
+      if (btn) btn.disabled = true;
+      const errBox = document.getElementById('cat-preview-errors');
+      if (errBox) errBox.innerHTML = '<div class="summary-chip warn" style="margin-bottom:10px;">Edits detected — click "Validate Rows" before confirming import.</div>';
     },
     onDeleteRow: (rowIdx) => {
       importState.mappedRows.splice(rowIdx, 1);

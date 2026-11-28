@@ -201,11 +201,13 @@ const OptiiCart = {
           const itemPrice = Number(item.total_price_inr || item.price_inr || item.item_price_inr || 0);
           const lineTotal = itemPrice * qty;
           const lenses = item.configured_lenses || {};
-          const hasPrescription = !!(item.prescription_token || item.prescription_file_url);
+          const hasPrescription = !!(item.prescription_token || item.prescription_file_url || lenses.prescription_token);
+          const rawImg = item.image_url || 'images/tortoise_round_front.jpg';
+          const imgSrc = rawImg.startsWith('/') || rawImg.startsWith('http') ? rawImg : `/${rawImg}`;
 
           return `
             <div class="cart-item-card">
-              <img class="cart-item-img" src="/${item.image_url || 'images/tortoise_round_front.jpg'}" alt="${item.product_name}" />
+              <img class="cart-item-img" src="${imgSrc}" alt="${item.product_name}" />
               <div class="cart-item-info">
                 <div class="cart-item-title">${item.product_name}</div>
                 <div class="cart-item-meta">${item.color_name || 'Standard'}${item.dimensions ? ` · ${item.dimensions}` : ''}</div>
@@ -554,7 +556,7 @@ const OptiiCart = {
           <input type="radio" name="del_method" value="pickup" ${this.state.checkout.delivery_method === 'pickup' ? 'checked' : ''} onchange="OptiiCart.setDeliveryMethod('pickup')" />
           <div class="checkout-choice-info">
             <div class="checkout-choice-title">Store Pickup & Custom Fitting</div>
-            <div class="checkout-choice-desc">Vision Opticals (12 Kamalalayam West Bank, Thiruvarur). Includes complimentary in-person ergonomic temple adjustment.</div>
+            <div class="checkout-choice-desc">${(window.__OPTII_STORE_SETTINGS__?.store?.name || 'Vision Opticals')} (${(window.__OPTII_STORE_SETTINGS__?.store?.address || '12 Kamalalayam West Bank, Thiruvarur')}). Includes complimentary in-person ergonomic temple adjustment.</div>
           </div>
           <div class="checkout-choice-price" style="color: #166534;">FREE</div>
         </label>

@@ -39,6 +39,15 @@
   grid-template-columns: 1.15fr 0.85fr;
   gap: 3.5rem;
   align-items: start;
+  /* Prevent grid blowout — both columns must shrink to their track size */
+  min-width: 0;
+}
+
+/* Direct grid children: must have min-width: 0 to honour fr-track sizing */
+.pdp-gallery-column,
+.pdp-sidebar {
+  min-width: 0;
+  width: 100%;
 }
 
 /* ─── 3. MULTI-IMAGE PRODUCT GALLERY ─── */
@@ -932,12 +941,18 @@
   }
   .pdp-container {
     padding: 0 12px 6rem;
+    /* Clamp container to viewport on mobile */
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .pdp-gallery-column,
   .pdp-gallery-showcase {
     max-width: 100%;
     width: 100%;
     overflow: hidden;
+    box-sizing: border-box;
   }
   .pdp-gallery-grid {
     display: flex;

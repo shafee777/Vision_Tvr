@@ -9,12 +9,10 @@ const db = require('../db/database');
 const { buildCsvContent } = require('../utils/csvValidation');
 
 const CATALOGUE_TEMPLATE_HEADERS = [
-  'master_sku', 'product_name', 'product_slug', 'description',
-  'brand_name', 'shape_name', 'category_name', 'base_price_inr',
-  'gender', 'material', 'frame_fit', 'lens_width_mm', 'bridge_width_mm',
-  'temple_length_mm', 'frame_height_mm', 'total_width_mm',
-  'variant_sku', 'color_name', 'color_hex', 'color_secondary_hex',
-  'price_override_inr', 'opening_stock', 'is_default'
+  'prod_code', 'product_name', 'brand_name', 'category_name', 'shape_name',
+  'material', 'frame_type', 'frame_fit', 'gender', 'base_price_inr', 'description',
+  'color_name', 'price_override_inr', 'opening_stock',
+  'lens_width_mm', 'bridge_width_mm', 'temple_length_mm', 'frame_height_mm', 'total_width_mm'
 ];
 
 const STOCK_TEMPLATE_HEADERS = [
@@ -52,40 +50,60 @@ function normalizeBoolFlag(val) {
   return 0;
 }
 
-/**
- * Generate blank or sample Catalogue CSV template (never mutates DB)
- */
-async function generateCatalogueTemplateCsv(includeSample = false) {
-  if (!includeSample) {
-    return buildCsvContent(CATALOGUE_TEMPLATE_HEADERS, []);
+const COLOR_HEX_DEFAULTS = {
+  black: '#111111',
+  matteblack: '#1F2937',
+  tortoise: '#70513B',
+  havana: '#6B4423',
+  brown: '#6E472B',
+  gold: '#C5A059',
+  silver: '#B8BCC0',
+  gunmetal: '#4B5563',
+  grey: '#6B7280',
+  gray: '#6B7280',
+  crystal: '#E5E7EB',
+  clear: '#E5E7EB',
+  transparent: '#E5E7EB',
+  blue: '#1E3A8A',
+  navy: '#1E293B',
+  green: '#166534',
+  olive: '#4D5D3B',
+  red: '#991B1B',
+  burgundy: '#7F1D1D',
+  pink: '#BE185D',
+  rose: '#D9777F',
+  amber: '#B45309',
+  champagne: '#E6D5B8',
+  tigerwood: '#7C4A27'
+};
+
+function deriveHexFromColorName(colorName) {
+  const key = String(colorName || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (COLOR_HEX_DEFAULTS[key]) return COLOR_HEX_DEFAULTS[key];
+  for (const [name, hex] of Object.entries(COLOR_HEX_DEFAULTS)) {
+    if (key.includes(name)) return hex;
   }
+  return '#111111';
+}
 
-  const [firstBrand, firstShape, firstCat] = await Promise.all([
-    db.get('SELECT name FROM brands WHERE is_active = 1 ORDER BY id ASC LIMIT 1'),
-    db.get('SELECT name FROM frame_shapes WHERE is_active = 1 ORDER BY id ASC LIMIT 1'),
-    db.get('SELECT name FROM categories WHERE is_active = 1 ORDER BY id ASC LIMIT 1')
-  ]);
+function generateInternalVariantSku(prodCode, colorName, usedSet) {
+  const base = String(prodCode || 'FRM').trim().toUpperCase().replace(/[^A-Z0-9-]+/g, '') || 'FRM';
+  const suffix = String(colorName || 'CLR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() || 'CLR';
+  let candidate = `${base}-${suffix}`;
+  let counter = 2;
+  while (usedSet.has(candidate)) {
+    candidate = `${base}-${suffix}${counter}`;
+    counter++;
+  }
+  usedSet.add(candidate);
+  return candidate;
+}
 
-  const brandName = firstBrand ? firstBrand.name : 'Optii Atelier';
-  const shapeName = firstShape ? firstShape.name : 'Round';
-  const categoryName = firstCat ? firstCat.name : 'Eyeglasses';
-
-  const sampleRows = [
-    [
-      'DEMO-MIRA-01', 'Mira Sample Round', 'demo-mira-sample-round', 'Sample demonstration frame (edit or replace before import)',
-      brandName, shapeName, categoryName, '4290',
-      'unisex', 'Italian Bio-Acetate', 'Medium', '49', '20', '145', '44', '134',
-      'DEMO-MIRA-BLK', 'Matte Black', '#222222', '', '', '12', '1'
-    ],
-    [
-      'DEMO-MIRA-01', 'Mira Sample Round', 'demo-mira-sample-round', 'Sample demonstration frame (edit or replace before import)',
-      brandName, shapeName, categoryName, '4290',
-      'unisex', 'Italian Bio-Acetate', 'Medium', '49', '20', '145', '44', '134',
-      'DEMO-MIRA-TOR', 'Tortoise', '#70513B', '#B2733B', '', '6', '0'
-    ]
-  ];
-
-  return buildCsvContent(CATALOGUE_TEMPLATE_HEADERS, sampleRows);
+/**
+ * Generate genuinely blank Catalogue CSV template (no sample records, never mutates DB)
+ */
+async function generateCatalogueTemplateCsv() {
+  return buildCsvContent(CATALOGUE_TEMPLATE_HEADERS, []);
 }
 
 /**
@@ -141,41 +159,48 @@ async function validateCatalogueRows(rawRows) {
   const warnings = [];
   const normalizedRows = [];
   const seenVariantSkus = new Map(); // SKU -> [rowNumbers]
-  const masterGroups = new Map(); // master_sku (upper) -> [entries]
+  const usedVariantSkus = new Set(refs.existingVariantSkus);
+  const masterGroups = new Map(); // prod_code (upper) -> [entries]
 
   rawRows.forEach((raw, idx) => {
     const rowNumber = Number(raw.rowNumber || idx + 2);
-    const masterSku = String(raw.master_sku || '').trim();
+    const prodCode = String(raw.prod_code || raw.master_sku || '').trim();
     const productName = String(raw.product_name || '').trim();
     const rawSlug = String(raw.product_slug || '').trim();
-    const productSlug = rawSlug ? slugify(rawSlug) : slugify(`${productName}-${masterSku}`);
+    const productSlug = rawSlug ? slugify(rawSlug) : slugify(`${productName}-${prodCode}`);
     const description = String(raw.description || '').trim();
-    const brandName = String(raw.brand_name || '').trim();
-    const shapeName = String(raw.shape_name || '').trim();
-    const categoryName = String(raw.category_name || '').trim();
-    const basePriceRaw = raw.base_price_inr;
+    const brandName = String(raw.brand_name || raw.brand || '').trim();
+    const shapeName = String(raw.shape_name || raw.shape || '').trim();
+    const categoryName = String(raw.category_name || raw.category || '').trim();
+    const basePriceRaw = raw.base_price_inr !== undefined && raw.base_price_inr !== '' ? raw.base_price_inr : raw.selling_price;
     const genderRaw = String(raw.gender || 'unisex').trim().toLowerCase();
     const material = String(raw.material || '').trim();
-    const fitRaw = String(raw.frame_fit || '').trim();
+    const fitRaw = String(raw.frame_fit || 'Medium').trim();
+    const frameType = String(raw.frame_type || 'Full Rim').trim();
+    const statusRaw = String(raw.status || 'active').trim().toLowerCase();
+    const isActiveVal = (statusRaw === '0' || statusRaw === 'false' || statusRaw === 'inactive' || statusRaw === 'archived') ? 0 : 1;
     const lensWidthRaw = raw.lens_width_mm;
     const bridgeWidthRaw = raw.bridge_width_mm;
     const templeLengthRaw = raw.temple_length_mm;
     const frameHeightRaw = raw.frame_height_mm;
     const totalWidthRaw = raw.total_width_mm;
 
-    const variantSku = String(raw.variant_sku || '').trim();
-    const colorName = String(raw.color_name || '').trim();
-    const colorHex = String(raw.color_hex || '').trim();
+    const colorName = String(raw.color_name || raw.frame_color || '').trim();
+    const rawVariantSku = String(raw.variant_sku || '').trim();
+    const variantSku = rawVariantSku || (prodCode && colorName ? generateInternalVariantSku(prodCode, colorName, usedVariantSkus) : '');
+    const colorHexRaw = String(raw.color_hex || raw.color_code || '').trim();
+    const colorHex = colorHexRaw || deriveHexFromColorName(colorName);
     const colorSecondaryHex = String(raw.color_secondary_hex || '').trim();
     const priceOverrideRaw = raw.price_override_inr;
-    const openingStockRaw = raw.opening_stock === '' || raw.opening_stock === undefined || raw.opening_stock === null ? '0' : raw.opening_stock;
+    const stockSrc = raw.opening_stock !== undefined && raw.opening_stock !== '' ? raw.opening_stock : raw.stock_quantity;
+    const openingStockRaw = stockSrc === '' || stockSrc === undefined || stockSrc === null ? '0' : stockSrc;
     const isDefault = normalizeBoolFlag(raw.is_default);
 
     const rowErrors = [];
     const addErr = (field, value, msg) => {
       const errObj = {
         row_number: rowNumber,
-        sku: variantSku || masterSku || '',
+        sku: variantSku || prodCode || '',
         field_name: field,
         submitted_value: value === undefined || value === null ? '' : String(value),
         error_message: `Row ${rowNumber}: ${msg}`
@@ -184,9 +209,8 @@ async function validateCatalogueRows(rawRows) {
       errors.push(errObj);
     };
 
-    if (!masterSku) addErr('master_sku', masterSku, 'Master SKU is required.');
+    if (!prodCode) addErr('prod_code', prodCode, 'Product Code (prod_code) is required.');
     if (!productName || productName.length < 2) addErr('product_name', productName, 'Product name must be at least 2 characters.');
-    if (!variantSku) addErr('variant_sku', variantSku, 'Variant SKU is required.');
     if (!colorName) addErr('color_name', colorName, 'Colour name is required.');
     if (!material) addErr('material', material, 'Frame material is required.');
 
@@ -268,14 +292,14 @@ async function validateCatalogueRows(rawRows) {
     }
 
     // DB conflict checks
-    if (masterSku && refs.existingMasterSkus.has(masterSku.toUpperCase())) {
-      addErr('master_sku', masterSku, `Master SKU '${masterSku}' already exists in catalogue.`);
+    if (prodCode && refs.existingMasterSkus.has(prodCode.toUpperCase())) {
+      addErr('prod_code', prodCode, `Product Code '${prodCode}' already exists in catalogue.`);
     }
     if (productSlug && refs.existingProductSlugs.has(productSlug)) {
       addErr('product_slug', productSlug, `Product slug '${productSlug}' already exists in catalogue.`);
     }
-    if (variantSku && refs.existingVariantSkus.has(variantSku.toUpperCase())) {
-      addErr('variant_sku', variantSku, `Variant SKU '${variantSku}' already exists.`);
+    if (rawVariantSku && refs.existingVariantSkus.has(rawVariantSku.toUpperCase())) {
+      addErr('variant_sku', rawVariantSku, `Variant SKU '${rawVariantSku}' already exists.`);
     }
 
     if (variantSku) {
@@ -284,16 +308,10 @@ async function validateCatalogueRows(rawRows) {
       seenVariantSkus.get(upperVar).push(rowNumber);
     }
 
-    if (!rawSlug && productName) {
-      warnings.push({
-        row_number: rowNumber,
-        message: `Row ${rowNumber}: Product slug omitted; derived '${productSlug}'.`
-      });
-    }
-
     const entry = {
       rowNumber,
-      master_sku: masterSku,
+      prod_code: prodCode,
+      master_sku: prodCode,
       product_name: productName,
       product_slug: productSlug,
       description,
@@ -307,6 +325,8 @@ async function validateCatalogueRows(rawRows) {
       gender: genderRaw,
       material,
       frame_fit: normalizedFit,
+      frame_type: frameType,
+      is_active: isActiveVal,
       lens_width_mm: Number.isFinite(lensWidth) ? Math.round(lensWidth) : null,
       bridge_width_mm: Number.isFinite(bridgeWidth) ? Math.round(bridgeWidth) : null,
       temple_length_mm: Number.isFinite(templeLength) ? Math.round(templeLength) : null,
@@ -324,8 +344,8 @@ async function validateCatalogueRows(rawRows) {
 
     normalizedRows.push(entry);
 
-    if (masterSku) {
-      const key = masterSku.toUpperCase();
+    if (prodCode) {
+      const key = prodCode.toUpperCase();
       if (!masterGroups.has(key)) masterGroups.set(key, []);
       masterGroups.get(key).push(entry);
     }
@@ -539,16 +559,18 @@ async function commitCatalogueRows({ rows, sourceType = 'csv', sourceName = 'cat
         const prodRes = await db.run(
           `INSERT INTO products (
              brand_id, shape_id, category_id, name, slug, sku, description,
-             base_price_inr, gender, material, frame_fit,
+             base_price_inr, gender, material, frame_fit, frame_type,
              lens_width_mm, bridge_width_mm, temple_length_mm,
              frame_height_mm, total_width_mm, is_active
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             master.brand_id, master.shape_id, master.category_id,
             master.product_name, master.product_slug, master.master_sku, master.description || null,
             master.base_price_inr, master.gender, master.material, master.frame_fit,
+            master.frame_type || 'Full Rim',
             master.lens_width_mm, master.bridge_width_mm, master.temple_length_mm,
-            master.frame_height_mm, master.total_width_mm
+            master.frame_height_mm, master.total_width_mm,
+            master.is_active !== undefined ? master.is_active : 1
           ]
         );
         const productId = prodRes.lastID;

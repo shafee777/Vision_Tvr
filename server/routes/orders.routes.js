@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const config = require('../config');
+const { getPublicStoreSettings } = require('../services/storeSettingsService');
 const { authenticateToken } = require('../middleware/auth');
 const { orderLimiter, trackingLimiter } = require('../middleware/rateLimiter');
 const { validateBody } = require('../middleware/validate');
@@ -410,9 +411,11 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
     }
 
     // Build prefilled WhatsApp confirmation link for the order
-    const businessPhone = config.WHATSAPP_PHONE.replace(/[^0-9]/g, '');
+    const { store: storeSettings } = await getPublicStoreSettings();
+    const storeDisplayName = storeSettings.name || 'Vision Opticals';
+    const businessPhone = String(storeSettings.whatsapp_number || storeSettings.phone || config.WHATSAPP_PHONE).replace(/[^0-9]/g, '');
     const waLines = [
-      `*Vision Opticals Order Confirmation*`,
+      `*${storeDisplayName} Order Confirmation*`,
       `━━━━━━━━━━━━━━━━━━━━`,
       `• *Order Number:* ${orderNumber}`,
       `• *Customer:* ${customer_name.trim()} (${cleanPhone})`,
@@ -432,7 +435,7 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
     });
 
     waLines.push(`━━━━━━━━━━━━━━━━━━━━`);
-    waLines.push(`_Hello Vision Opticals, I have confirmed my optical order #${orderNumber}. Please proceed with lens glazing._`);
+    waLines.push(`_Hello ${storeDisplayName}, I have confirmed my optical order #${orderNumber}. Please proceed with lens glazing._`);
 
     const waText = encodeURIComponent(waLines.join('\n'));
     const whatsappUrl = `https://wa.me/${businessPhone}?text=${waText}`;

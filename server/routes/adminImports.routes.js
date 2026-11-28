@@ -33,26 +33,13 @@ async function logImportAudit(req, action, entity, entityId, details) {
 // GET /api/admin/imports/catalogue/template
 router.get('/catalogue/template', requireRole('admin'), async (req, res) => {
   try {
-    const csv = await importService.generateCatalogueTemplateCsv(false);
+    const csv = await importService.generateCatalogueTemplateCsv();
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="optii_catalogue_blank_template.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="vision_opticals_catalogue_blank_template.csv"');
     res.send(csv);
   } catch (err) {
     console.error('Catalogue Template Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate catalogue template.' });
-  }
-});
-
-// GET /api/admin/imports/catalogue/sample
-router.get('/catalogue/sample', requireRole('admin'), async (req, res) => {
-  try {
-    const csv = await importService.generateCatalogueTemplateCsv(true);
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="optii_catalogue_sample_template.csv"');
-    res.send(csv);
-  } catch (err) {
-    console.error('Catalogue Sample Error:', err);
-    res.status(500).json({ success: false, message: 'Failed to generate sample catalogue CSV.' });
   }
 });
 
