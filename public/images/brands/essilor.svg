@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" role="img" aria-label="Essilor Lenses">
+  <rect width="240" height="120" fill="#ffffff"/>
+  <rect x="34" y="14" width="172" height="58" rx="4" fill="#0072CE"/>
+  <g fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round">
+    <path d="M84 43 C98 25, 142 25, 156 43 C142 61, 98 61, 84 43 Z"/>
+    <circle cx="120" cy="43" r="11" stroke-width="2.8"/>
+    <circle cx="120" cy="43" r="4" fill="#ffffff" stroke="none"/>
+  </g>
+  <text x="120" y="97" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="800" letter-spacing="4" fill="#111111">ESSILOR</text>
+</svg>

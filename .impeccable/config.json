@@ -1,0 +1,19 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "public/index.html",
+          "public/product.html",
+          "public/track.html"
+        ],
+        "createdAt": "2026-11-28T09:54:36.522Z",
+        "reason": "user confirmed: user explicitly requested collaborated optical brands in sliding/smooth marquee motion"
+      }
+    ]
+  }
+}

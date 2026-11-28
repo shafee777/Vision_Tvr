@@ -44,6 +44,7 @@ const OptiiApp = {
     this.hydrateStateFromUrl();
     this.bindEvents();
     this.updateBadges();
+    this.renderCollaboratedBrands();
 
     window.addEventListener('popstate', () => {
       this.hydrateStateFromUrl();
@@ -263,9 +264,71 @@ const OptiiApp = {
       const data = await OptiiAPI.getBrands();
       this.state.brands = data.brands || [];
       this.renderFilterBrands();
+      this.renderCollaboratedBrands();
     } catch (err) {
       console.warn('Could not load brands:', err);
     }
+  },
+
+  renderCollaboratedBrands() {
+    const track = document.getElementById('brands-marquee-track');
+    if (!track) return;
+
+    const corePartners = [
+      { name: 'Essilor', category: 'Prescription Lenses', logo: '/images/brands/essilor.svg', filterType: 'brand', slug: 'essilor-eyezen' },
+      { name: 'Ray-Ban', category: 'Eyewear & Sun', logo: '/images/brands/rayban.svg', filterType: 'brand', slug: 'ray-ban-optics' },
+      { name: 'Varilux', category: 'Multifocal Lenses', logo: '/images/brands/varilux.svg', filterType: 'brand', slug: 'essilor-eyezen' },
+      { name: 'Fastrack', category: 'Youth Eyewear', logo: '/images/brands/fastrack.svg', filterType: 'all', slug: '' },
+      { name: 'Bausch + Lomb', category: 'Contact Lenses', logo: '/images/brands/bausch-lomb.svg', filterType: 'category', slug: 'contact_lenses' },
+      { name: 'ZEISS', category: 'Precision Optics', logo: '/images/brands/zeiss.svg', filterType: 'brand', slug: 'zeiss-vision' }
+    ];
+
+    const coreLogos = new Set(corePartners.map(p => p.logo));
+    const coreSlugs = new Set(corePartners.map(p => p.slug).filter(Boolean));
+    const dynamicExtras = (this.state.brands || [])
+      .filter(b => b.logo_url && !coreLogos.has(b.logo_url) && !coreSlugs.has(b.slug) && b.slug !== 'optii-atelier')
+      .map(b => ({
+        name: b.name,
+        category: 'Optical Partner',
+        logo: b.logo_url.startsWith('/') || b.logo_url.startsWith('http') ? b.logo_url : `/${b.logo_url}`,
+        filterType: 'brand',
+        slug: b.slug
+      }));
+
+    const items = [...corePartners, ...dynamicExtras];
+    const renderCards = (isDuplicate) => items.map(item => `
+      <button type="button"
+              class="brand-partner-card"
+              ${isDuplicate ? 'aria-hidden="true" tabindex="-1"' : `aria-label="Explore ${item.name} — ${item.category}"`}
+              onclick="OptiiApp.handleBrandShowcaseClick('${item.filterType}', '${item.slug}')">
+        <div class="brand-partner-logo-wrap">
+          <img class="brand-partner-logo" src="${item.logo}" alt="${isDuplicate ? '' : `${item.name} logo`}" loading="lazy" />
+        </div>
+        <div class="brand-partner-footer">
+          <span class="brand-partner-name">${item.name}</span>
+          <span class="brand-partner-category">${item.category}</span>
+        </div>
+      </button>
+    `).join('');
+
+    track.innerHTML = renderCards(false) + renderCards(true);
+  },
+
+  handleBrandShowcaseClick(filterType, slug) {
+    if (filterType === 'category' && slug) {
+      this.state.filters.brand = '';
+      this.selectCategoryFilter(slug);
+    } else if (filterType === 'brand' && slug) {
+      this.state.category = 'all';
+      this.state.filters.brand = slug;
+      this.renderDynamicNavCategories();
+      this.renderFilterBrands();
+      this.loadProducts();
+    } else {
+      this.clearFilters();
+    }
+    const grid = document.getElementById('plp-filter-strip');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
 
   async loadCategories() {

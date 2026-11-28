@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" role="img" aria-label="Fastrack Eyewear">
+  <rect width="240" height="120" fill="#ffffff"/>
+  <path d="M132 20 L148 20 L138 38 L156 38 L124 62 L132 42 L116 42 Z" fill="#FF6A00"/>
+  <text x="120" y="88" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-style="italic" font-size="28" font-weight="900" letter-spacing="-0.5" fill="#111111">fastrack</text>
+  <text x="120" y="106" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="1.6" fill="#525252">FRAMES &amp; SUNGLASSES</text>
+</svg>

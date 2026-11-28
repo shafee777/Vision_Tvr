@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" role="img" aria-label="Bausch + Lomb Contact Lenses">
+  <rect width="240" height="120" fill="#ffffff"/>
+  <path d="M24 34 Q120 12 216 28 L216 38 Q120 24 24 40 Z" fill="#005EB8"/>
+  <text x="120" y="68" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="0.4" fill="#111111">BAUSCH + LOMB</text>
+  <text x="120" y="92" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="1.2" fill="#005EB8">CONTACT LENSES</text>
+</svg>

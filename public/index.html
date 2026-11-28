@@ -379,17 +379,24 @@
     </div>
   </main>
 
-  <!-- 9. 2-COLUMN EDITORIAL SPLIT BANNER -->
-  <section class="editorial-split-section">
-    <div class="editorial-split-media">
-      <img src="/images/exterior.webp" alt="Vision Opticals Storefront" />
+  <!-- 9. COLLABORATED OPTICAL BRANDS SHOWCASE (SMOOTH SLIDING TRACK) -->
+  <section class="brands-marquee-section" id="collaborated-brands" aria-labelledby="brands-showcase-title">
+    <div class="brands-marquee-header">
+      <div>
+        <h2 class="editorial-title" id="brands-showcase-title">Authorized Lens &amp; Frame Partners.</h2>
+      </div>
+      <div class="brands-marquee-meta">
+        <p class="editorial-body" style="margin-bottom: 1rem;">Certified prescription lenses, multifocals, contact lenses, and iconic frame houses fitted with precision at our clinic.</p>
+        <button type="button" class="btn-pill-primary" style="background-color: var(--color-ink); color: #fff;" onclick="OptiiApp.clearFilters(); window.scrollTo({top: 450, behavior: 'smooth'});">
+          Explore Full Collection
+        </button>
+      </div>
     </div>
-    <div class="editorial-split-content">
-      <h2 class="editorial-title">Designed with intention.<br>Refined in millimeters.</h2>
-      <p class="editorial-body">Every frame at Vision Opticals undergoes a 60-step milling and hand-polishing process using biodegradable cellulose acetates and aircraft-grade Japanese titanium. Built for comfort, all-day balance, and timeless aesthetic clarity.</p>
-      <button class="btn-pill-primary" style="background-color: var(--color-ink); color: #fff;" onclick="window.scrollTo({top: 450, behavior: 'smooth'});">
-        Explore Optical Frames
-      </button>
+
+    <div class="brands-marquee-viewport" aria-label="Collaborated eyewear and lens brands">
+      <div class="brands-marquee-track" id="brands-marquee-track">
+        <!-- Populated dynamically with smooth continuous slide -->
+      </div>
     </div>
   </section>
 

@@ -23,10 +23,10 @@ async function seedOptii() {
   // 2. Seed Brands
   const brands = [
     { id: 1, name: 'Optii Atelier', slug: 'optii-atelier', description: 'Bespoke European handcrafted eyewear frames.', logo_url: '/images/Vison Logo.png' },
-    { id: 2, name: 'Ray-Ban Optics', slug: 'ray-ban-optics', description: 'Timeless optical silhouettes and icons.', logo_url: '' },
+    { id: 2, name: 'Ray-Ban Optics', slug: 'ray-ban-optics', description: 'Timeless optical silhouettes and icons.', logo_url: '/images/brands/rayban.svg' },
     { id: 3, name: 'Gucci Eyewear', slug: 'gucci-eyewear', description: 'Italian luxury statement frames.', logo_url: '' },
-    { id: 4, name: 'Zeiss Vision', slug: 'zeiss-vision', description: 'Precision German engineering and lens technology.', logo_url: '' },
-    { id: 5, name: 'Essilor Eyezen', slug: 'essilor-eyezen', description: 'Digital screen protection and blue filter optics.', logo_url: '' },
+    { id: 4, name: 'Zeiss Vision', slug: 'zeiss-vision', description: 'Precision German engineering and lens technology.', logo_url: '/images/brands/zeiss.svg' },
+    { id: 5, name: 'Essilor Eyezen', slug: 'essilor-eyezen', description: 'Digital screen protection and blue filter optics.', logo_url: '/images/brands/essilor.svg' },
     { id: 6, name: 'Silhouette Atelier', slug: 'silhouette-atelier', description: 'Austrian featherlight rimless frames.', logo_url: '' }
   ];
 
