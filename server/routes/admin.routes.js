@@ -1190,7 +1190,7 @@ router.get('/inventory/export', requireRole('admin', 'staff'), async (req, res) 
 });
 
 // POST /api/admin/inventory/adjust - Manual Stock Adjustment or Replenishment with Mandatory Reason & Schema Validation
-router.post('/inventory/adjust', validateBody(stockAdjustSchema), async (req, res) => {
+router.post('/inventory/adjust', requireRole('admin', 'staff'), validateBody(stockAdjustSchema), async (req, res) => {
   try {
     const { variant_id, change_quantity, movement_type = 'manual_adjustment', reason } = req.body;
 
@@ -1868,7 +1868,7 @@ router.put('/lenses/coatings/:id', requireRole('admin', 'optometrist'), async (r
 // ═════════════════════════════════════════════════════════════════════
 
 // GET /api/admin/orders - Search & Filter Orders
-router.get('/orders', async (req, res) => {
+router.get('/orders', requireRole('admin', 'staff', 'optometrist'), async (req, res) => {
   try {
     const { search, order_status, payment_status, date } = req.query;
     let conditions = [];
@@ -1894,9 +1894,14 @@ router.get('/orders', async (req, res) => {
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql = `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC`;
     const orders = await db.all(sql, params);
+    const canViewRx = req.user.role === 'admin' || req.user.role === 'optometrist';
 
     const parsed = orders.map(o => {
       try { o.items = JSON.parse(o.items_json); } catch (_) { o.items = []; }
+      if (!canViewRx) {
+        delete o.prescription_file_url;
+        delete o.prescription_data;
+      }
       return o;
     });
 
@@ -1908,17 +1913,23 @@ router.get('/orders', async (req, res) => {
 });
 
 // GET /api/admin/orders/:orderNumber - Order Detail
-router.get('/orders/:orderNumber', async (req, res) => {
+router.get('/orders/:orderNumber', requireRole('admin', 'staff', 'optometrist'), async (req, res) => {
   try {
     const orderNumber = req.params.orderNumber.trim();
     const order = await db.get('SELECT * FROM orders WHERE order_number = ?', [orderNumber]);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
     try { order.items = JSON.parse(order.items_json); } catch (_) { order.items = []; }
+    const canViewRx = req.user.role === 'admin' || req.user.role === 'optometrist';
 
-    // If prescription data attached, parse
-    if (order.prescription_data) {
-      try { order.prescription_data = JSON.parse(order.prescription_data); } catch (_) {}
+    if (canViewRx) {
+      // If prescription data attached, parse
+      if (order.prescription_data) {
+        try { order.prescription_data = JSON.parse(order.prescription_data); } catch (_) {}
+      }
+    } else {
+      delete order.prescription_file_url;
+      delete order.prescription_data;
     }
 
     res.json({ success: true, order });
@@ -1928,7 +1939,7 @@ router.get('/orders/:orderNumber', async (req, res) => {
 });
 
 // PATCH /api/admin/orders/:orderNumber/status - Order Lifecycle State Transition
-router.patch('/orders/:orderNumber/status', async (req, res) => {
+router.patch('/orders/:orderNumber/status', requireRole('admin', 'staff'), async (req, res) => {
   try {
     const orderNumber = req.params.orderNumber.trim();
     const { order_status, tracking_number } = req.body;
@@ -1960,12 +1971,17 @@ router.patch('/orders/:orderNumber/status', async (req, res) => {
           for (const it of items) {
             const qty = Math.max(1, Number(it.quantity) || 1);
             if (it.variant_id) {
-              await db.run('UPDATE product_variants SET stock_quantity = stock_quantity + ? WHERE id = ?', [qty, it.variant_id]);
-              await db.run(
-                `INSERT INTO inventory_movements (variant_id, product_id, user_id, username, change_quantity, previous_quantity, new_quantity, movement_type, reason)
-                 VALUES (?, ?, ?, ?, ?, 0, 0, 'order_cancellation', ?)`,
-                [it.variant_id, it.product_id || 1, req.user ? req.user.id : 0, req.user ? req.user.username : 'Staff', qty, `Restocked from cancelled order ${orderNumber}`]
-              );
+              const vRow = await db.get('SELECT product_id, stock_quantity FROM product_variants WHERE id = ?', [it.variant_id]);
+              if (vRow) {
+                const prevQty = Number(vRow.stock_quantity || 0);
+                const newQty = prevQty + qty;
+                await db.run('UPDATE product_variants SET stock_quantity = ? WHERE id = ?', [newQty, it.variant_id]);
+                await db.run(
+                  `INSERT INTO inventory_movements (variant_id, product_id, user_id, username, change_quantity, previous_quantity, new_quantity, movement_type, reason)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 'order_cancellation', ?)`,
+                  [it.variant_id, vRow.product_id || it.product_id || 1, req.user ? req.user.id : 0, req.user ? req.user.username : 'Staff', qty, prevQty, newQty, `Restocked from cancelled order ${orderNumber}`]
+                );
+              }
             }
           }
         } catch (e) {
@@ -1998,7 +2014,7 @@ router.patch('/orders/:orderNumber/status', async (req, res) => {
 });
 
 // PATCH /api/admin/orders/:orderNumber/payment - Dedicated Payment Lifecycle & Transition Controls
-router.patch('/orders/:orderNumber/payment', async (req, res) => {
+router.patch('/orders/:orderNumber/payment', requireRole('admin'), async (req, res) => {
   try {
     const orderNumber = req.params.orderNumber.trim();
     const { action, amount_inr, reason, transaction_ref, gateway } = req.body;

@@ -4,8 +4,8 @@ const fs = require('fs');
 const config = require('../config');
 
 // Ensure upload directory exists
-if (!fs.existsSync(config.UPLOAD_DIR)) {
-  fs.mkdirSync(config.UPLOAD_DIR, { recursive: true });
+if (config.UPLOADS_DIR && !fs.existsSync(config.UPLOADS_DIR)) {
+  fs.mkdirSync(config.UPLOADS_DIR, { recursive: true });
 }
 
 // Multer memory storage (allows Jimp to optimize before writing to disk)
@@ -35,7 +35,7 @@ const uploadImages = multer({
 // Disk storage for CSV uploads
 const csvDiskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, config.UPLOAD_DIR);
+    cb(null, config.UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
     const uniqueName = 'import_' + Date.now() + '_' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');

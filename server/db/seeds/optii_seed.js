@@ -171,7 +171,7 @@ async function seedOptii() {
           id: 2, color_name: 'Morning Haze Crystal', color_hex: '#e9eef2', color_secondary_hex: null,
           sku: 'OPT-HEN-01-CRY', price_override_inr: null, stock_quantity: 8, is_default: 0,
           images: [
-            { image_type: 'studio_front', image_url: 'images/slim rectangle frame.png', display_order: 1 },
+            { image_type: 'studio_front', image_url: 'images/slim_rectangle_frame.jpg', display_order: 1 },
             { image_type: 'angle_45', image_url: 'images/tortoise_round_angle.jpg', display_order: 2 },
             { image_type: 'model_on_face', image_url: 'images/tortoise_round_angle.jpg', display_order: 3 },
             { image_type: 'hinge_detail', image_url: 'images/image1.jpg', display_order: 4 }
@@ -181,7 +181,7 @@ async function seedOptii() {
           id: 3, color_name: 'Matte Black', color_hex: '#111111', color_secondary_hex: null,
           sku: 'OPT-HEN-01-BLK', price_override_inr: null, stock_quantity: 15, is_default: 0,
           images: [
-            { image_type: 'studio_front', image_url: 'images/slim rectangle frame.png', display_order: 1 },
+            { image_type: 'studio_front', image_url: 'images/slim_rectangle_frame.jpg', display_order: 1 },
             { image_type: 'angle_45', image_url: 'images/tortoise_round_angle.jpg', display_order: 2 },
             { image_type: 'model_on_face', image_url: 'images/tortoise_round_angle.jpg', display_order: 3 },
             { image_type: 'hinge_detail', image_url: 'images/image1.jpg', display_order: 4 }
@@ -211,7 +211,7 @@ async function seedOptii() {
           id: 5, color_name: 'Titanium Silver', color_hex: '#c0c0c0', color_secondary_hex: null,
           sku: 'OPT-TOR-02-SLV', price_override_inr: null, stock_quantity: 7, is_default: 0,
           images: [
-            { image_type: 'studio_front', image_url: 'images/slim rectangle frame.png', display_order: 1 },
+            { image_type: 'studio_front', image_url: 'images/slim_rectangle_frame.jpg', display_order: 1 },
             { image_type: 'angle_45', image_url: 'images/tortoise_round_angle.jpg', display_order: 2 },
             { image_type: 'model_on_face', image_url: 'images/tortoise_round_angle.jpg', display_order: 3 },
             { image_type: 'hinge_detail', image_url: 'images/image1.jpg', display_order: 4 }
@@ -251,7 +251,7 @@ async function seedOptii() {
           id: 7, color_name: 'Polished Gold', color_hex: '#d4af37', color_secondary_hex: null,
           sku: 'OPT-NEI-04-GLD', price_override_inr: null, stock_quantity: 14, is_default: 1,
           images: [
-            { image_type: 'studio_front', image_url: 'images/slim rectangle frame.png', display_order: 1 },
+            { image_type: 'studio_front', image_url: 'images/slim_rectangle_frame.jpg', display_order: 1 },
             { image_type: 'angle_45', image_url: 'images/tortoise_round_angle.jpg', display_order: 2 },
             { image_type: 'model_on_face', image_url: 'images/tortoise_round_angle.jpg', display_order: 3 },
             { image_type: 'hinge_detail', image_url: 'images/image1.jpg', display_order: 4 }
@@ -291,7 +291,7 @@ async function seedOptii() {
           id: 9, color_name: 'Brushed Gunmetal', color_hex: '#41424c', color_secondary_hex: null,
           sku: 'OPT-PIE-06-GUN', price_override_inr: null, stock_quantity: 11, is_default: 1,
           images: [
-            { image_type: 'studio_front', image_url: 'images/slim rectangle frame.png', display_order: 1 },
+            { image_type: 'studio_front', image_url: 'images/slim_rectangle_frame.jpg', display_order: 1 },
             { image_type: 'angle_45', image_url: 'images/tortoise_round_angle.jpg', display_order: 2 },
             { image_type: 'model_on_face', image_url: 'images/tortoise_round_angle.jpg', display_order: 3 },
             { image_type: 'hinge_detail', image_url: 'images/image1.jpg', display_order: 4 }

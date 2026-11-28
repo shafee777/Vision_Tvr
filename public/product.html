@@ -57,6 +57,10 @@
   <!-- 2. FIXED SITE HEADER (60PX) -->
   <header class="site-header" id="site-header">
     <div class="header-left">
+      <button class="mobile-menu-trigger" id="mobile-menu-trigger" aria-label="Open Navigation Menu" onclick="OptiiPDP.toggleNavDrawer(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
       <a href="/" class="brand-logo" data-store-logo-slot>
         <span data-store-name>Vision Opticals</span>
       </a>
@@ -80,10 +84,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       </button>
 
-      <a href="/admin" class="header-action-btn" title="Staff Portal" aria-label="Staff Login">
-        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </a>
-
       <button class="header-action-btn" id="header-cart-btn" aria-label="View Optical Bag" onclick="OptiiPDP.toggleCartDrawer(true)">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <span class="header-badge" id="cart-badge" style="display: none;">0</span>
@@ -94,6 +94,26 @@
       </button>
     </div>
   </header>
+
+  <!-- MOBILE NAVIGATION DRAWER -->
+  <div class="nav-drawer-backdrop" id="nav-drawer-backdrop" onclick="OptiiPDP.toggleNavDrawer(false)"></div>
+  <aside class="nav-drawer" id="nav-drawer" role="dialog" aria-modal="true" aria-label="Site Navigation">
+    <div class="drawer-header">
+      <span class="drawer-title">Explore Collections</span>
+      <button class="drawer-close-btn" id="nav-drawer-close" aria-label="Close Navigation" onclick="OptiiPDP.toggleNavDrawer(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-content">
+      <a class="drawer-sublink" href="/?category=glasses" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Glasses</a>
+      <a class="drawer-sublink" href="/?category=sunglasses" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Sunglasses</a>
+      <a class="drawer-sublink" href="/?category=accessories" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Accessories</a>
+      <a class="drawer-sublink" href="/?category=contact_lenses" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Contact Lenses</a>
+      <a class="drawer-sublink" href="/?category=eyecare" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Eye Care</a>
+      <a class="drawer-sublink" href="/track" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Track Order</a>
+      <a class="drawer-sublink" href="/#book" style="display:block;padding:12px 0;font-weight:500;">Book Eye Test</a>
+    </div>
+  </aside>
 
   <!-- 3. BREADCRUMBS -->
   <nav class="pdp-breadcrumbs" id="pdp-breadcrumbs-container" aria-label="Breadcrumbs">
@@ -194,6 +214,10 @@
 
           <button class="btn-frame-only-hero" onclick="OptiiPDP.addFrameOnlyToCart()">
             Add Frame Only Without Prescription
+          </button>
+
+          <button type="button" class="btn-frame-only-hero" id="pdp-wishlist-hero-btn" aria-label="Save to Wishlist" onclick="OptiiPDP.toggleWishlist()">
+            Save to Wishlist
           </button>
 
           <button class="btn-whatsapp-hero" id="pdp-whatsapp-btn" onclick="OptiiPDP.inquireOnWhatsApp()">
@@ -591,7 +615,7 @@
       <div>
         <div class="footer-col-title">Customer Care</div>
         <div class="footer-links-list">
-          <a class="footer-link" href="#track" onclick="OptiiCart.openTrackModal(); return false;">Track Your Order</a>
+          <a class="footer-link" href="/track" onclick="OptiiCart.openTrackModal(); return false;">Track Your Order</a>
           <a class="footer-link" href="/#returns">30-Day Return Guarantee</a>
           <a class="footer-link" href="/#shipping">Complimentary Courier Across India</a>
           <a class="footer-link" href="/#warranty">1-Year Lens Coating Warranty</a>

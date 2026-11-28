@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db/database');
 const config = require('../config');
 const { getPublicStoreSettings } = require('../services/storeSettingsService');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const { orderLimiter, trackingLimiter } = require('../middleware/rateLimiter');
 const { validateBody } = require('../middleware/validate');
 const { orderCreateSchema } = require('../validators/schemas');
@@ -318,11 +318,12 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
     try {
       await db.transaction(async () => {
         // Re-verify inventory within transaction to prevent race conditions
+        const variantSnap = {};
         for (const item of items) {
           const qty = Math.max(1, Number(item.quantity) || 1);
           if (item.variant_id) {
             const variant = await db.get(
-              'SELECT id, sku, color_name, stock_quantity FROM product_variants WHERE id = ?',
+              'SELECT id, product_id, sku, color_name, stock_quantity FROM product_variants WHERE id = ?',
               [item.variant_id]
             );
             if (!variant || variant.stock_quantity < qty) {
@@ -330,6 +331,7 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
               stockErr.code = 'INSUFFICIENT_STOCK';
               throw stockErr;
             }
+            variantSnap[item.variant_id] = variant;
           }
         }
 
@@ -337,14 +339,18 @@ router.post('/', orderLimiter, validateBody(orderCreateSchema), async (req, res)
         for (const item of items) {
           const qty = Math.max(1, Number(item.quantity) || 1);
           if (item.variant_id) {
+            const snap = variantSnap[item.variant_id];
+            const prevQty = Number(snap.stock_quantity || 0);
+            const newQty = prevQty - qty;
+            snap.stock_quantity = newQty;
             await db.run(
-              'UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE id = ?',
-              [qty, item.variant_id]
+              'UPDATE product_variants SET stock_quantity = ? WHERE id = ?',
+              [newQty, item.variant_id]
             );
             await db.run(
               `INSERT INTO inventory_movements (variant_id, product_id, user_id, username, change_quantity, previous_quantity, new_quantity, movement_type, reason)
-               VALUES (?, ?, ?, ?, ?, 0, 0, 'order_sale', ?)`,
-              [item.variant_id, item.product_id || 1, null, 'Customer Checkout', -qty, `Order placed: #${orderNumber}`]
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'order_sale', ?)`,
+              [item.variant_id, snap.product_id || item.product_id || 1, null, 'Customer Checkout', -qty, prevQty, newQty, `Order placed: #${orderNumber}`]
             );
           }
         }
@@ -490,7 +496,7 @@ router.get('/track/:orderNumber', trackingLimiter, async (req, res) => {
     const orderNumber = req.params.orderNumber.trim();
     const order = await db.get(
       `SELECT id, order_number, customer_name, customer_phone, customer_email,
-              shipping_address, city, state, pincode, delivery_method,
+              city, state, pincode, delivery_method,
               subtotal_inr, discount_inr, promo_code, total_amount_inr,
               payment_method, payment_status, order_status, items_json,
               tracking_number, estimated_delivery, created_at
@@ -500,6 +506,16 @@ router.get('/track/:orderNumber', trackingLimiter, async (req, res) => {
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order reference number not found.' });
+    }
+
+    // Mask personal contact PII on public tracking endpoint while retaining city/state/delivery milestone context
+    if (order.customer_phone) {
+      const digits = String(order.customer_phone).replace(/[^0-9]/g, '');
+      order.customer_phone = digits.length >= 4 ? `${'*'.repeat(Math.max(4, digits.length - 4))}${digits.slice(-4)}` : '****';
+    }
+    if (order.customer_email) {
+      const parts = String(order.customer_email).split('@');
+      order.customer_email = parts.length === 2 ? `${parts[0].slice(0, 2)}***@${parts[1]}` : '***';
     }
 
     try {
@@ -544,7 +560,7 @@ router.get('/track/:orderNumber', trackingLimiter, async (req, res) => {
 });
 
 // PATCH /api/orders/:orderNumber/status - Staff update order status (Protected & Duplicate-Cancellation Safe)
-router.patch('/:orderNumber/status', authenticateToken, async (req, res) => {
+router.patch('/:orderNumber/status', authenticateToken, requireRole('admin', 'staff'), async (req, res) => {
   try {
     await ensureOrderColumns();
     const orderNumber = req.params.orderNumber.trim();
@@ -575,15 +591,20 @@ router.patch('/:orderNumber/status', authenticateToken, async (req, res) => {
           for (const item of items) {
             const qty = Math.max(1, Number(item.quantity) || 1);
             if (item.variant_id) {
-              await db.run(
-                'UPDATE product_variants SET stock_quantity = stock_quantity + ? WHERE id = ?',
-                [qty, item.variant_id]
-              );
-              await db.run(
-                `INSERT INTO inventory_movements (variant_id, product_id, user_id, username, change_quantity, previous_quantity, new_quantity, movement_type, reason)
-                 VALUES (?, ?, ?, ?, ?, 0, 0, 'order_cancellation', ?)`,
-                [item.variant_id, item.product_id || 1, (req.user ? req.user.id : null), req.user ? req.user.username : 'Staff', qty, `Restocked from cancelled order #${orderNumber}`]
-              );
+              const vRow = await db.get('SELECT product_id, stock_quantity FROM product_variants WHERE id = ?', [item.variant_id]);
+              if (vRow) {
+                const prevQty = Number(vRow.stock_quantity || 0);
+                const newQty = prevQty + qty;
+                await db.run(
+                  'UPDATE product_variants SET stock_quantity = ? WHERE id = ?',
+                  [newQty, item.variant_id]
+                );
+                await db.run(
+                  `INSERT INTO inventory_movements (variant_id, product_id, user_id, username, change_quantity, previous_quantity, new_quantity, movement_type, reason)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 'order_cancellation', ?)`,
+                  [item.variant_id, vRow.product_id || item.product_id || 1, (req.user ? req.user.id : null), req.user ? req.user.username : 'Staff', qty, prevQty, newQty, `Restocked from cancelled order #${orderNumber}`]
+                );
+              }
             }
           }
         } catch (e) {
@@ -608,7 +629,7 @@ router.patch('/:orderNumber/status', authenticateToken, async (req, res) => {
 });
 
 // GET /api/orders - List all orders (Protected)
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, requireRole('admin', 'staff'), async (req, res) => {
   try {
     await ensureOrderColumns();
     const orders = await db.all('SELECT * FROM orders ORDER BY created_at DESC');

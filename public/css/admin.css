@@ -36,8 +36,8 @@
   --radius-md: 6px;
   --radius-pill: 9999px;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --w-sidebar: 240px;
   --h-topbar: 60px;
@@ -383,7 +383,8 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding: 12px;
   margin-bottom: 1.5rem;
 }
@@ -754,7 +755,11 @@ textarea.form-control {
   }
 
   .topbar-mobile-trigger {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
   }
 
   .form-grid-2,

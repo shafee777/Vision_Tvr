@@ -36,16 +36,26 @@ async function saveBlob(filename, buffer, mimeType = 'image/jpeg') {
     }
   }
 
-  // Also write to local disk if directory exists/writable
-  try {
-    if (!fs.existsSync(config.UPLOAD_DIR)) {
-      fs.mkdirSync(config.UPLOAD_DIR, { recursive: true });
+  // Also write to local disk using canonical UPLOADS_DIR
+  const uploadDir = config.UPLOADS_DIR;
+  let savedToDisk = false;
+  if (uploadDir) {
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      const filePath = path.join(uploadDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      savedToDisk = true;
+    } catch (diskErr) {
+      console.error('[BlobService] Local disk save failed:', diskErr.message);
+      if (!savedToBlob) throw diskErr;
     }
-    const filePath = path.join(config.UPLOAD_DIR, filename);
-    fs.writeFileSync(filePath, buffer);
-  } catch (_) {}
+  } else if (!savedToBlob) {
+    throw new Error('BlobService configuration error: UPLOADS_DIR is not defined and cloud blob store is unavailable.');
+  }
 
-  return { savedToBlob, filename };
+  return { savedToBlob, savedToDisk, filename };
 }
 
 /**
@@ -53,12 +63,14 @@ async function saveBlob(filename, buffer, mimeType = 'image/jpeg') {
  */
 async function getBlob(filename) {
   // 1. Try local disk first
-  const localPath = path.join(config.UPLOAD_DIR, filename);
-  if (fs.existsSync(localPath)) {
-    return {
-      buffer: fs.readFileSync(localPath),
-      source: 'disk'
-    };
+  if (config.UPLOADS_DIR) {
+    const localPath = path.join(config.UPLOADS_DIR, filename);
+    if (fs.existsSync(localPath)) {
+      return {
+        buffer: fs.readFileSync(localPath),
+        source: 'disk'
+      };
+    }
   }
 
   // 2. Try Netlify Blobs
@@ -92,12 +104,16 @@ async function deleteBlob(filename) {
     } catch (_) {}
   }
 
-  try {
-    const filePath = path.join(config.UPLOAD_DIR, filename);
-    const thumbPath = path.join(config.UPLOAD_DIR, 'thumb_' + filename);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
-  } catch (_) {}
+  if (config.UPLOADS_DIR) {
+    try {
+      const filePath = path.join(config.UPLOADS_DIR, filename);
+      const thumbPath = path.join(config.UPLOADS_DIR, 'thumb_' + filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+    } catch (err) {
+      console.warn('[BlobService] Local disk delete warning:', err.message);
+    }
+  }
 }
 
 /**

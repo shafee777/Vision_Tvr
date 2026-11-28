@@ -1,0 +1,42 @@
+{
+  "backup_file": "optii_backup_2026-11-28T09-26-51-428Z.db",
+  "source_db": "C:\\Users\\shafe\\Desktop\\Projects\\optii\\data\\optii_test.db",
+  "timestamp": "2026-11-28T09:26:51.611Z",
+  "size_bytes": 327680,
+  "sha256": "d9c2c344be1cef394e0690dbe6ad3885669124de8005e4f4c86c2626b53b50c0",
+  "tables_active": 25,
+  "table_counts": {
+    "admin_import_batches": 0,
+    "admin_import_errors": 0,
+    "appointments": 5,
+    "audit_logs": 13,
+    "brands": 6,
+    "categories": 6,
+    "customer_enquiries": 3,
+    "eyecare_articles": 1,
+    "frame_shapes": 6,
+    "inventory_movements": 11,
+    "lens_coatings": 4,
+    "lens_prescription_options": 3,
+    "lens_thicknesses": 4,
+    "lens_usages": 6,
+    "orders": 8,
+    "payment_webhooks": 1,
+    "prescriptions": 2,
+    "product_images": 36,
+    "product_variants": 11,
+    "products": 7,
+    "promo_codes": 3,
+    "site_settings": 4,
+    "store_hours": 7,
+    "stores": 1,
+    "users": 3
+  },
+  "encryption": {
+    "algorithm": "aes-256-cbc",
+    "encrypted_file": "optii_backup_2026-11-28T09-26-51-428Z.db.enc",
+    "encrypted_size_bytes": 327712,
+    "encrypted_sha256": "b93f61e02fed4e1c79204a3b0c8b380b0dc6d387e0c3f2e7db9a0db13f1e3e12",
+    "ready_for_cloud_sync": true
+  }
+}

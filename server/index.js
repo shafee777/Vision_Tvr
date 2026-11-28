@@ -10,10 +10,10 @@ const app = express();
 // Security Headers (CSP, X-Frame-Options, HSTS, Sniffing Protection)
 app.use(securityHeaders);
 
-// CORS Policy Configuration
+// CORS Policy Configuration (Never leave open wildcard CORS in production)
 if (config.CORS_ORIGINS && config.CORS_ORIGINS.length > 0) {
   app.use(cors({ origin: config.CORS_ORIGINS, credentials: true }));
-} else {
+} else if (!config.IS_PRODUCTION) {
   app.use(cors());
 }
 

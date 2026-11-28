@@ -45,7 +45,8 @@ router.post('/whatsapp', async (req, res) => {
         const lensStr = it.configured_lenses 
           ? `${it.configured_lenses.usage_name || 'Lenses'} · ${it.configured_lenses.thickness_name || 'Standard'}`
           : 'Frame Only';
-        lines.push(`  ${idx + 1}. *${it.product_name || 'Frame'}* (${it.color_name || 'Standard'})`);
+        const skuTag = it.sku ? ` [${it.sku}]` : '';
+        lines.push(`  ${idx + 1}. *${it.product_name || 'Frame'}*${skuTag} (${it.color_name || 'Standard'})`);
         lines.push(`     Options: ${lensStr}`);
         lines.push(`     Qty: ${it.quantity || 1} · ₹${Number(it.total_price_inr || it.price_inr || it.item_price_inr || 0).toLocaleString('en-IN')}`);
       });
@@ -54,11 +55,13 @@ router.post('/whatsapp', async (req, res) => {
       lines.push(`• *Estimated Bag Total:* ₹${Number(price || 0).toLocaleString('en-IN')}`);
       lines.push(`_Hello ${storeName}, I would like to inquire about stock availability & placing this order via WhatsApp._`);
     } else {
+      const qty = Math.max(1, Number(req.body.quantity) || 1);
       lines = [
         `*${storeName} Order Inquiry*`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `• *Frame:* ${product_name || 'Optical Frame'} (${sku || 'N/A'})`,
         `• *Colorway:* ${color}`,
+        `• *Quantity:* ${qty}`,
         dimensions ? `• *Dimensions:* ${dimensions}` : null,
         lens_usage ? `• *Lens Usage:* ${lens_usage}` : null,
         lens_thickness ? `• *Lens Index:* ${lens_thickness}` : null,

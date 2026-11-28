@@ -16,13 +16,19 @@
   <!-- 1. HEADER (60PX) -->
   <header class="site-header" id="site-header">
     <div class="header-left">
+      <button class="mobile-menu-trigger" id="mobile-menu-trigger" aria-label="Open Navigation Menu" onclick="toggleTrackNavDrawer(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
       <a href="/" class="brand-logo" data-store-logo-slot>
         <span class="brand-name" data-store-name>Vision Opticals</span>
       </a>
       <nav class="nav-links-desktop">
-        <a class="nav-item" href="/#glasses">Glasses</a>
-        <a class="nav-item" href="/#sunglasses">Sunglasses</a>
-        <a class="nav-item" href="/#eyecare">Eye Care</a>
+        <a class="nav-item" href="/?category=glasses">Glasses</a>
+        <a class="nav-item" href="/?category=sunglasses">Sunglasses</a>
+        <a class="nav-item" href="/?category=accessories">Accessories</a>
+        <a class="nav-item" href="/?category=contact_lenses">Contact Lenses</a>
+        <a class="nav-item" href="/?category=eyecare">Eye Care</a>
         <a class="nav-item active" href="/track">Track Order</a>
       </nav>
     </div>
@@ -39,6 +45,25 @@
     </div>
   </header>
 
+  <div class="nav-drawer-backdrop" id="nav-drawer-backdrop" onclick="toggleTrackNavDrawer(false)"></div>
+  <aside class="nav-drawer" id="nav-drawer" role="dialog" aria-modal="true" aria-label="Site Navigation">
+    <div class="drawer-header">
+      <span class="drawer-title">Explore Collections</span>
+      <button class="drawer-close-btn" aria-label="Close Navigation" onclick="toggleTrackNavDrawer(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-content">
+      <a class="drawer-sublink" href="/?category=glasses" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Glasses</a>
+      <a class="drawer-sublink" href="/?category=sunglasses" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Sunglasses</a>
+      <a class="drawer-sublink" href="/?category=accessories" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Accessories</a>
+      <a class="drawer-sublink" href="/?category=contact_lenses" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Contact Lenses</a>
+      <a class="drawer-sublink" href="/?category=eyecare" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:500;">Eye Care</a>
+      <a class="drawer-sublink" href="/track" style="display:block;padding:12px 0;border-bottom:1px solid var(--color-border);font-weight:600;">Track Order</a>
+      <a class="drawer-sublink" href="/#book" style="display:block;padding:12px 0;font-weight:500;">Book Eye Test</a>
+    </div>
+  </aside>
+
   <!-- 2. TRACKING HERO & LOOKUP -->
   <main style="flex: 1; max-width: 760px; width: 100%; margin: 2rem auto; padding: 0 1.5rem;">
     <div style="text-align: center; margin-bottom: 2rem;">
@@ -47,8 +72,9 @@
     </div>
 
     <div style="background: #fff; border: 1px solid var(--color-border); padding: 1.5rem; margin-bottom: 2rem;">
-      <form id="track-form" onsubmit="handleTrackForm(event)" style="display: flex; gap: 8px;">
-        <input type="text" id="track-input" class="checkout-form-input" style="flex: 1; height: 46px; font-size: 14px;" placeholder="Enter Order Number (e.g. OPT-ORD-2026-8492)" required />
+      <form id="track-form" onsubmit="handleTrackForm(event)" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <label for="track-input" class="sr-only">Order Number</label>
+        <input type="text" id="track-input" class="checkout-form-input" style="flex: 1; min-width: 200px; height: 46px; font-size: 14px;" placeholder="Enter Order Number (e.g. OPT-ORD-2026-8492)" required />
         <button type="submit" class="btn-pill-primary" style="background: var(--color-ink); color: #fff; padding: 0 28px; height: 46px; font-size: 14px; font-weight: 600; cursor: pointer;">
           Track Status
         </button>
@@ -134,6 +160,17 @@
     });
   </script>
   <script>
+    function toggleTrackNavDrawer(open) {
+      const drawer = document.getElementById('nav-drawer');
+      const backdrop = document.getElementById('nav-drawer-backdrop');
+      if (drawer && backdrop) {
+        drawer.classList.toggle('active', open);
+        backdrop.classList.toggle('active', open);
+      }
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleTrackNavDrawer(false);
+    });
     async function handleTrackForm(e) {
       if (e) e.preventDefault();
       const input = document.getElementById('track-input');
@@ -166,14 +203,14 @@
               <div style="font-size: 14px; font-weight: 600;">₹${Number(o.total_amount_inr).toLocaleString('en-IN')} (${o.payment_method.toUpperCase()})</div>
             </div>
             <div style="font-size: 13px; color: var(--color-ink-secondary); margin-top: 6px;">
-              Patron: <strong>${o.customer_name}</strong> · Delivery to: <strong>${o.shipping_address}, ${o.city} (${o.pincode})</strong>
+              Patron: <strong>${o.customer_name}</strong> · Delivery to: <strong>${[o.city, o.state].filter(Boolean).join(', ') || 'Registered Address'}${o.pincode ? ` (${o.pincode})` : ''}</strong>
             </div>
             <div style="font-size: 12px; color: var(--color-ink-muted); margin-top: 4px;">
               Carrier Consignment: <strong>${o.tracking_number || 'BlueDart Express'}</strong> · Estimated Delivery: <strong>${o.estimated_delivery}</strong>
             </div>
           </div>
 
-          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 1rem;">Glazing & Dispatch Milestones</h3>
+          <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 1rem;">Glazing & Dispatch Milestones</h2>
           <div class="track-timeline">
             ${stages.map((st, i) => `
               <div class="track-stage ${st.completed ? 'completed' : ''} ${o.order_status === st.key ? 'current' : ''}">

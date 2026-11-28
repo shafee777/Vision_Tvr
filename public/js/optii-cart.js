@@ -249,6 +249,7 @@ const OptiiCart = {
             </div>
           ` : `
             <form class="cart-promo-form" onsubmit="OptiiCart.handlePromoSubmit(event)">
+              <label for="cart-promo-input" class="sr-only">Privilege Code</label>
               <input type="text" id="cart-promo-input" class="cart-promo-input" placeholder="Privilege Code (e.g. WELCOME500)" autocomplete="off" />
               <button type="submit" class="cart-promo-btn">Apply</button>
             </form>
@@ -805,6 +806,7 @@ const OptiiCart = {
         </div>
         <div class="checkout-modal-body" style="padding: 1.5rem;">
           <form onsubmit="OptiiCart.handleTrackSubmit(event)" style="display: flex; gap: 8px; margin-bottom: 1.5rem;">
+            <label for="track-search-input" class="sr-only">Order Number</label>
             <input type="text" id="track-search-input" class="checkout-form-input" style="flex: 1;" placeholder="Enter Order Number (e.g. OPT-ORD-2026-XXXX)" required />
             <button type="submit" class="btn-pill-primary" style="background: var(--color-ink); color: #fff; padding: 0 20px; font-size: 13px; font-weight: 600; cursor: pointer;">Track</button>
           </form>

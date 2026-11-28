@@ -86,7 +86,7 @@ async function runMultiProcessSuite() {
   console.log(`[Process B] Spawning secondary independent Node.js process on port ${PORT_B}...`);
   const serverPath = path.resolve(__dirname, '../server/index.js');
   const procB = spawn(process.execPath, [serverPath], {
-    env: { ...process.env, PORT: PORT_B, NODE_ENV: 'development' },
+    env: { ...process.env, PORT: PORT_B, NODE_ENV: process.env.NODE_ENV || 'test' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
 

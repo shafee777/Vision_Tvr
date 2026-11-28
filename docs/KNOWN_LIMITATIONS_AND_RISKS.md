@@ -62,7 +62,7 @@
 |---|---|---|---|---|---|---|
 | **RSK-001** | Commercial | Premature Public Orders in Sandbox Mode | **HIGH** | Medium | Checkouts clearly labeled with `is_simulated_payment: true`; live payment gateway onboarding required before DNS launch. | **LOW** |
 | **RSK-002** | Operations | Staff Default Password Exposure | **HIGH** | Low | Documented mandatory password rotation in Go-Live runbook; role-based permissions prevent unauthorized actions. | **LOW** |
-| **RSK-003** | Infrastructure | Unmonitored Disk Fill from Backups & Uploads | **MEDIUM** | Medium | Automated 24-hour backup rotation script prunes stale local snapshots; upload size capped at 10MB by Zod and Nginx. | **LOW** |
+| **RSK-003** | Infrastructure | Unmonitored Disk Fill from Backups & Uploads | **MEDIUM** | Medium | Automated 24-hour backup rotation script prunes stale local snapshots; upload size capped at 5MB by Multer (`admin.routes.js` & `prescriptions.routes.js`) and 2MB JSON payload limit in Express. | **LOW** |
 | **RSK-004** | Medical Privacy | Accidental Prescription Leakage in Order Tracking | **HIGH** | Low | SQL projection in `orders.routes.js` explicitly strips internal file paths and medical tokens from public queries. | **ZERO** |
 | **RSK-005** | Inventory | Overlapping Concurrent Checkout Race Condition | **MEDIUM** | Low | `db.transaction()` queue with `BEGIN IMMEDIATE` exclusive locking re-checks stock inside write lock, rejecting competing orders with 400. | **ZERO** |
 | **RSK-006** | Appointments | Double-Booking of In-Store Optometry Slots | **MEDIUM** | Low | Unique constraint on `(appointment_date, start_time)` and server-side collision validation rejects concurrent bookings with HTTP 409. | **ZERO** |

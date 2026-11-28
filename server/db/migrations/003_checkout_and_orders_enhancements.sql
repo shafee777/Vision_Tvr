@@ -23,3 +23,8 @@ VALUES
     ('FREESHIP', 'fixed', 250, 0, 250, 'Complimentary insured express courier waiver');
 
 CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+
+-- 2. Extend Orders Table for Checkout Enhancements (required before Migration 006 rebuild)
+ALTER TABLE orders ADD COLUMN delivery_method TEXT DEFAULT 'express';
+ALTER TABLE orders ADD COLUMN promo_code TEXT;
+ALTER TABLE orders ADD COLUMN estimated_delivery TEXT;

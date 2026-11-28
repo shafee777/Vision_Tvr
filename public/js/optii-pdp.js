@@ -338,7 +338,7 @@ const OptiiPDP = {
       const priceFormatted = `₹${Number(rel.base_price_inr).toLocaleString('en-IN')}`;
       const dims = `${rel.lens_width_mm || 51}-${rel.bridge_width_mm || 20}-${rel.temple_length_mm || 150} mm`;
       return `
-        <div class="product-card" onclick="window.location.href='/product/${rel.slug}'">
+        <article class="product-card" role="button" tabindex="0" onclick="window.location.href='/product/${rel.slug}'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location.href='/product/${rel.slug}';}">
           <div class="product-card-media">
             <img class="product-img-studio" src="${resolveImgSrc(rel.primary_image)}" alt="${rel.name}" loading="lazy" />
           </div>
@@ -348,11 +348,11 @@ const OptiiPDP = {
               <span class="product-dimension-tag">${dims}</span>
             </div>
             <div class="product-card-header">
-              <h5 class="product-title">${rel.name}</h5>
+              <h3 class="product-title">${rel.name}</h3>
               <div class="product-price">${priceFormatted}</div>
             </div>
           </div>
-        </div>
+        </article>
       `;
     }).join('');
   },
@@ -959,6 +959,7 @@ const OptiiPDP = {
         product_name: p.name,
         sku: v.sku,
         color_name: v.color_name,
+        quantity: 1,
         dimensions: p.dimensions ? p.dimensions.display_string : null,
         lens_usage: cfg.usage ? cfg.usage.name : 'Single Vision Distance',
         lens_thickness: cfg.thickness ? cfg.thickness.name : 'Standard 1.50',
@@ -999,14 +1000,26 @@ const OptiiPDP = {
       if (open) {
         const box = document.getElementById('wishlist-drawer-items');
         if (box) {
-          box.innerHTML = this.state.wishlist.length === 0
-            ? '<div style="text-align:center;padding:3rem 1rem;color:var(--color-ink-muted);">No saved frames yet.</div>'
-            : this.state.wishlist.map(slug => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--color-border);">
-                  <a href="/product/${slug}" style="font-weight:500;color:var(--color-ink);text-decoration:none;">${slug}</a>
-                  <button type="button" class="btn-pill-secondary" style="padding:4px 10px;font-size:12px;" onclick="window.location.href='/product/${slug}'">View</button>
+          if (this.state.wishlist.length === 0) {
+            box.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:var(--color-ink-muted);">No saved frames yet.</div>';
+          } else {
+            const p = this.state.product;
+            const related = (p && p.related_products) || [];
+            box.innerHTML = this.state.wishlist.map(slug => {
+              const matched = (p && p.slug === slug) ? p : related.find(r => r.slug === slug);
+              const label = matched ? matched.name : slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+              const thumb = matched
+                ? resolveImgSrc(matched.variants?.[0]?.primary_image || matched.primary_image)
+                : '';
+              return `
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border);">
+                  ${thumb ? `<img src="${thumb}" alt="${label}" style="width:52px;height:52px;object-fit:contain;background:var(--color-surface-subtle);" />` : ''}
+                  <a href="/product/${slug}" style="flex:1;font-weight:500;color:var(--color-ink);text-decoration:none;">${label}</a>
+                  <button type="button" class="btn-pill-secondary" style="padding:6px 14px;font-size:12px;color:var(--color-ink);border-color:var(--color-border);" onclick="window.location.href='/product/${slug}'">View</button>
                 </div>
-              `).join('');
+              `;
+            }).join('');
+          }
         }
       }
     }
@@ -1094,6 +1107,7 @@ const OptiiPDP = {
     if (!btn || !this.state.product) return;
     const isSaved = this.state.wishlist.includes(this.state.product.slug);
     btn.classList.toggle('active', isSaved);
+    btn.textContent = isSaved ? 'Saved in Wishlist ♥' : 'Save to Wishlist';
     btn.setAttribute('aria-label', isSaved ? 'Remove from Wishlist' : 'Save to Wishlist');
   },
 
@@ -1153,6 +1167,7 @@ const OptiiPDP = {
         this.closeZoomModal();
         this.toggleCartDrawer(false);
         this.toggleWishlistDrawer(false);
+        this.toggleNavDrawer(false);
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         if (this.state.configurator.isOpen) return;
         const zoomOpen = document.getElementById('fullscreen-zoom-modal')?.classList.contains('active');

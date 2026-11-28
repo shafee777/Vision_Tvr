@@ -68,6 +68,9 @@ class PaymentGatewayService {
 
     if (gateway === 'razorpay') {
       const secret = config.RAZORPAY_KEY_SECRET;
+      if (this.isLive && (!secret || secret.startsWith('rzp_test_'))) {
+        return { valid: false, reason: 'Live Razorpay secret not configured.' };
+      }
       const expectedSignature = crypto
         .createHmac('sha256', secret)
         .update(`${orderId}|${paymentId}`)
@@ -85,12 +88,22 @@ class PaymentGatewayService {
       return { valid: match, reason: match ? null : 'HMAC signature verification failed.' };
     } else if (gateway === 'cashfree') {
       const secret = config.CASHFREE_SECRET_KEY;
+      if (this.isLive && (!secret || secret.startsWith('cf_sec_sandbox_'))) {
+        return { valid: false, reason: 'Live Cashfree secret not configured.' };
+      }
       const expectedSignature = crypto
         .createHmac('sha256', secret)
         .update(`${orderId}${paymentId}`)
-        .digest('hex');
+        .digest('hex')
+        .toLowerCase();
 
-      const match = expectedSignature.toLowerCase() === signature.toLowerCase();
+      const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+      const actualBuffer = Buffer.from(String(signature).toLowerCase(), 'utf8');
+      if (expectedBuffer.length !== actualBuffer.length) {
+        return { valid: false, reason: 'Cashfree signature verification failed.' };
+      }
+
+      const match = crypto.timingSafeEqual(expectedBuffer, actualBuffer);
       return { valid: match, reason: match ? null : 'Cashfree signature verification failed.' };
     }
 
@@ -119,6 +132,9 @@ class PaymentGatewayService {
     }
 
     const secret = gateway === 'razorpay' ? config.RAZORPAY_WEBHOOK_SECRET : config.CASHFREE_WEBHOOK_SECRET;
+    if (this.isLive && (!secret || secret.includes('optii_test_webhook_key'))) {
+      return false;
+    }
     const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody);
 
     const expectedSignature = crypto
@@ -155,9 +171,7 @@ class PaymentGatewayService {
     }
 
     if (this.isLive) {
-      // In live production, dispatch to Razorpay Refunds API: POST /v1/payments/{paymentGatewayRef}/refund
-      // Or Cashfree /pg/orders/{orderNumber}/refunds
-      console.log(`[Payment Gateway LIVE] Initiating live refund for ${orderNumber} via ${gateway}...`);
+      throw new Error('Live Razorpay/Cashfree refund API integration required before enabling live refunds.');
     }
 
     // Return structured refund payload

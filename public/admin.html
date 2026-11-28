@@ -876,8 +876,8 @@
             <div class="card-table-wrap">
               <div class="table-filter-bar">
                 <div class="table-filter-group">
-                  <input type="text" id="orders-search-input" class="admin-search-input" placeholder="Search order #, customer, phone…" oninput="OptiiAdmin.debouncedOrderSearch()" />
-                  <select id="orders-filter-status" class="admin-select" onchange="OptiiAdmin.loadOrders()">
+                  <input type="text" id="orders-search-input" class="admin-search-input" aria-label="Search orders" placeholder="Search order #, customer, phone…" oninput="OptiiAdmin.debouncedOrderSearch()" />
+                  <select id="orders-filter-status" class="admin-select" aria-label="Filter orders by stage" onchange="OptiiAdmin.loadOrders()">
                     <option value="">All Order Stages</option>
                     <option value="placed">Placed (Pending Glazing)</option>
                     <option value="processing">Processing</option>
@@ -984,7 +984,7 @@
             </div>
             <div class="card-table-wrap">
               <div class="table-filter-bar">
-                <input type="text" id="audit-filter-action" class="admin-search-input" placeholder="Filter by action, staff user, or entity…" oninput="OptiiAdmin.loadAuditLogs()" />
+                <input type="text" id="audit-filter-action" class="admin-search-input" aria-label="Filter audit logs" placeholder="Filter by action, staff user, or entity…" oninput="OptiiAdmin.loadAuditLogs()" />
               </div>
               <table class="admin-table">
                 <thead><tr><th>Log #</th><th>Timestamp</th><th>Staff</th><th>Action</th><th>Entity</th><th>IP Address</th></tr></thead>
@@ -1004,15 +1004,14 @@
               </div>
             </div>
 
-            <div class="form-grid-2" style="align-items:start;">
-              <div class="card-table-wrap" style="padding:1.5rem;">
-                <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Store Logo</h3>
-                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-                  <div class="store-logo-preview" id="set-store-logo-preview">
-                    <span style="font-size:12px;color:var(--ink-secondary);">Loading logo…</span>
-                  </div>
-                  <div style="flex:1;min-width:200px;">
-                    <input type="file" id="set-store-logo-input" accept="image/jpeg,image/png,image/webp" class="form-control" style="padding:6px;margin-bottom:8px;" onchange="OptiiAdmin.previewStoreLogoFile(this)" />
+            <div class="card-table-wrap" style="padding:1.5rem;max-width:860px;">
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Store Logo</h3>
+              <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                <div class="store-logo-preview" id="set-store-logo-preview">
+                  <span style="font-size:12px;color:var(--ink-secondary);">Loading logo…</span>
+                </div>
+                <div style="flex:1;min-width:200px;">
+                  <input type="file" id="set-store-logo-input" aria-label="Upload store logo image" accept="image/jpeg,image/png,image/webp" class="form-control" style="padding:6px;margin-bottom:8px;" onchange="OptiiAdmin.previewStoreLogoFile(this)" />
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                       <button type="button" class="btn-primary btn-sm" id="btn-upload-store-logo" onclick="OptiiAdmin.uploadStoreLogo()">Upload Logo</button>
                       <button type="button" class="btn-danger btn-sm" id="btn-remove-store-logo" onclick="OptiiAdmin.removeStoreLogo()" style="display:none;">Remove Logo</button>
@@ -1100,7 +1099,6 @@
                     <button type="submit" class="btn-primary">Save Store Settings</button>
                   </div>
                 </form>
-              </div>
             </div>
           </section>
 
@@ -1309,14 +1307,14 @@
           <form onsubmit="OptiiAdmin.handleAddVariant(event)">
             <input type="hidden" id="variant-add-product-id" />
             <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Colour Name</label><input type="text" name="color_name" class="form-control" placeholder="e.g. Tokyo Tortoise" required /></div>
-              <div class="form-group"><label class="form-label">Hex (#RRGGBB)</label><input type="text" name="color_hex" class="form-control" placeholder="#5a3d28" required /></div>
-              <div class="form-group"><label class="form-label">Secondary Hex (Optional)</label><input type="text" name="color_secondary_hex" class="form-control" placeholder="#d4a373" /></div>
+              <div class="form-group"><label class="form-label" for="var-add-color-name">Colour Name</label><input type="text" id="var-add-color-name" name="color_name" class="form-control" placeholder="e.g. Tokyo Tortoise" required /></div>
+              <div class="form-group"><label class="form-label" for="var-add-color-hex">Hex (#RRGGBB)</label><input type="text" id="var-add-color-hex" name="color_hex" class="form-control" placeholder="#5a3d28" required /></div>
+              <div class="form-group"><label class="form-label" for="var-add-color-sec-hex">Secondary Hex (Optional)</label><input type="text" id="var-add-color-sec-hex" name="color_secondary_hex" class="form-control" placeholder="#d4a373" /></div>
             </div>
             <div class="form-grid-3">
-              <div class="form-group"><label class="form-label">Variant SKU</label><input type="text" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01-TOR" required /></div>
-              <div class="form-group"><label class="form-label">Initial Stock Count</label><input type="number" name="stock_quantity" class="form-control" value="10" min="0" required /></div>
-              <div class="form-group"><label class="form-label">Price Override (₹)</label><input type="number" name="price_override_inr" class="form-control" placeholder="Blank = base price" min="1" /></div>
+              <div class="form-group"><label class="form-label" for="var-add-sku">Variant SKU</label><input type="text" id="var-add-sku" name="sku" class="form-control" placeholder="e.g. OPT-AKR-01-TOR" required /></div>
+              <div class="form-group"><label class="form-label" for="var-add-stock">Initial Stock Count</label><input type="number" id="var-add-stock" name="stock_quantity" class="form-control" value="10" min="0" required /></div>
+              <div class="form-group"><label class="form-label" for="var-add-price">Price Override (₹)</label><input type="number" id="var-add-price" name="price_override_inr" class="form-control" placeholder="Blank = base price" min="1" /></div>
             </div>
             <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-bottom:10px;cursor:pointer;">
               <input type="checkbox" name="is_default" value="1" /> Set as Default Colorway
@@ -1439,14 +1437,14 @@
       </div>
       <form onsubmit="OptiiAdmin.handleCreateUser(event)">
         <div class="admin-modal-body">
-          <div class="form-group"><label class="form-label">Full Name</label><input type="text" name="full_name" class="form-control" placeholder="Dr. S. Ramesh" required /></div>
+          <div class="form-group"><label class="form-label" for="new-user-full-name">Full Name</label><input type="text" id="new-user-full-name" name="full_name" class="form-control" placeholder="Dr. S. Ramesh" required /></div>
           <div class="form-grid-2">
-            <div class="form-group"><label class="form-label">Staff Username</label><input type="text" name="username" class="form-control" placeholder="sramesh" required /></div>
-            <div class="form-group"><label class="form-label">Temporary Password</label><input type="password" name="password" class="form-control" placeholder="••••••••" minlength="6" required /></div>
+            <div class="form-group"><label class="form-label" for="new-user-username">Staff Username</label><input type="text" id="new-user-username" name="username" class="form-control" placeholder="sramesh" required /></div>
+            <div class="form-group"><label class="form-label" for="new-user-password">Temporary Password</label><input type="password" id="new-user-password" name="password" class="form-control" placeholder="••••••••" minlength="6" required /></div>
           </div>
           <div class="form-group">
-            <label class="form-label">Role Clearance Level</label>
-            <select name="role" class="form-control" required>
+            <label class="form-label" for="new-user-role">Role Clearance Level</label>
+            <select id="new-user-role" name="role" class="form-control" required>
               <option value="staff">Store Staff (Inventory, Orders, Enquiries)</option>
               <option value="optometrist">Clinical Optometrist (Eye Tests, Lenses, Orders)</option>
               <option value="admin">Master Administrator (Full Clearance)</option>

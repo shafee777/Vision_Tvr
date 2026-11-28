@@ -80,6 +80,10 @@ export async function loadLenses() {
     }
   } catch (err) {
     showToast('Error loading lens configuration options.', 'error');
+    ['lenses-usages-body', 'lenses-rx-body', 'lenses-thicknesses-body', 'lenses-coatings-body'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<tr><td colspan="5" class="empty-state-box" style="color:#991b1b;">Unable to load lens options. Please refresh or check server migrations.</td></tr>';
+    });
   }
 }
 

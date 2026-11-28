@@ -173,6 +173,20 @@ const OptiiApp = {
     // Appointment Booking Trigger
     const bookTestBtn = document.getElementById('btn-book-test-header');
     if (bookTestBtn) bookTestBtn.addEventListener('click', () => this.openAppointmentModal());
+
+    // Global Escape Dismissal for Drawers & Modals
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.toggleNavDrawer(false);
+        this.toggleFilterDrawer(false);
+        this.toggleSearchModal(false);
+        this.toggleCartDrawer(false);
+        this.toggleWishlistDrawer(false);
+        this.closeAppointmentModal();
+        this.closeProductDetail();
+        this.closeCareModal();
+      }
+    });
   },
 
   // 3. UI Toggles
@@ -365,10 +379,10 @@ const OptiiApp = {
     if (!container) return;
 
     container.innerHTML = this.state.shapes.map(s => `
-      <div class="filter-shape-chip ${this.state.filters.shape === s.slug ? 'active' : ''}" onclick="OptiiApp.setShapeFilter('${s.slug}')">
+      <button type="button" class="filter-shape-chip ${this.state.filters.shape === s.slug ? 'active' : ''}" onclick="OptiiApp.setShapeFilter('${s.slug}')">
         ${s.icon_svg}
         <span class="filter-shape-label">${s.name}</span>
-      </div>
+      </button>
     `).join('');
   },
 
@@ -400,22 +414,24 @@ const OptiiApp = {
       const fitText = p.frame_fit ? ` · ${p.frame_fit} Fit` : '';
 
       // Swatches HTML
-      const swatchesHtml = (p.variants || []).map((v, idx) => `
-        <div class="swatch-touch-container ${v.id === defaultVariant.id ? 'active' : ''}" 
+      const swatchesHtml = (p.variants || []).map(() => '').length ? (p.variants || []).map(v => `
+        <button type="button" class="swatch-touch-container ${v.id === defaultVariant.id ? 'active' : ''}" 
              title="${v.color_name}"
-             onclick="event.stopPropagation(); OptiiApp.selectCardColor(${p.id}, ${v.id})">
-          <div class="swatch-circle-dot" style="background-color: ${v.color_hex};"></div>
-        </div>
-      `).join('');
+             aria-label="Select ${v.color_name} colour for ${p.name}"
+             data-variant-id="${v.id}"
+             onclick="event.stopPropagation(); OptiiApp.selectCardColor(${p.id}, ${v.id}, this)">
+          <span class="swatch-circle-dot" style="background-color: ${v.color_hex};"></span>
+        </button>
+      `).join('') : '';
 
       return `
-        <div class="product-card" id="product-card-${p.id}" onclick="OptiiApp.openProductDetail('${p.slug}')">
+        <article class="product-card" id="product-card-${p.id}" role="button" tabindex="0" aria-label="${p.name}, ${priceFormatted}" onclick="OptiiApp.openProductDetail('${p.slug}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();OptiiApp.openProductDetail('${p.slug}');}">
           <div class="product-card-media">
             <img class="product-img-studio" id="card-img-studio-${p.id}" src="${primaryImg}" alt="${p.name}" loading="lazy" />
             <img class="product-img-model" id="card-img-model-${p.id}" src="${hoverImg}" alt="${p.name} on model" loading="lazy" />
             
-            <button class="product-wishlist-btn ${isWishlisted ? 'active' : ''}" 
-                    aria-label="Save to Wishlist"
+            <button type="button" class="product-wishlist-btn ${isWishlisted ? 'active' : ''}" 
+                    aria-label="${isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}"
                     onclick="event.stopPropagation(); OptiiApp.toggleWishlist('${p.slug}')">
               <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
@@ -429,19 +445,19 @@ const OptiiApp = {
               <span class="product-dimension-tag">${dims}</span>
             </div>
             <div class="product-card-header">
-              <h5 class="product-title">${p.name}</h5>
+              <h3 class="product-title">${p.name}</h3>
               <div class="product-price">${priceFormatted}</div>
             </div>
             <div class="product-color-label" id="card-color-label-${p.id}">${activeColor}${fitText}</div>
             <div class="product-swatches-row">${swatchesHtml}</div>
           </div>
-        </div>
+        </article>
       `;
     }).join('');
   },
 
   // 7. Interactive Swatch Re-binding on Card
-  selectCardColor(productId, variantId) {
+  selectCardColor(productId, variantId, triggerEl) {
     const product = this.state.products.find(p => p.id === productId);
     if (!product || !product.variants) return;
 
@@ -452,17 +468,18 @@ const OptiiApp = {
     const card = document.getElementById(`product-card-${productId}`);
     if (card) {
       card.querySelectorAll('.swatch-touch-container').forEach(el => el.classList.remove('active'));
-      const activeEl = event.currentTarget;
+      const activeEl = triggerEl || card.querySelector(`[data-variant-id="${variantId}"]`);
       if (activeEl) activeEl.classList.add('active');
 
       // Update image sources immediately
       const studioImg = card.querySelector(`#card-img-studio-${productId}`);
       const modelImg = card.querySelector(`#card-img-model-${productId}`);
       const colorLabel = card.querySelector(`#card-color-label-${productId}`);
+      const fitText = product.frame_fit ? ` · ${product.frame_fit} Fit` : '';
 
       if (studioImg) studioImg.src = resolveStoreImgSrc(variant.primary_image, 'images/tortoise_round_front.jpg');
       if (modelImg) modelImg.src = resolveStoreImgSrc(variant.hover_image || variant.primary_image, 'images/tortoise_round_front.jpg');
-      if (colorLabel) colorLabel.textContent = variant.color_name;
+      if (colorLabel) colorLabel.textContent = `${variant.color_name}${fitText}`;
     }
   },
 
@@ -595,8 +612,8 @@ const OptiiApp = {
     }
 
     container.innerHTML = results.map(p => `
-      <div class="search-result-item" onclick="OptiiApp.toggleSearchModal(false); OptiiApp.openProductDetail('${p.slug}')">
-        <img class="search-result-thumb" src="${(p.default_variant && p.default_variant.primary_image) || 'images/tortoise_round_front.jpg'}" alt="${p.name}" />
+      <div class="search-result-item" role="button" tabindex="0" onclick="OptiiApp.toggleSearchModal(false); OptiiApp.openProductDetail('${p.slug}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();OptiiApp.toggleSearchModal(false);OptiiApp.openProductDetail('${p.slug}');}">
+        <img class="search-result-thumb" src="${resolveStoreImgSrc(p.default_variant && p.default_variant.primary_image)}" alt="${p.name}" />
         <div class="search-result-info">
           <div class="search-result-title">${p.name}</div>
           <div class="search-result-meta">${p.brand_name} · ${p.shape_name} · ₹${Number(p.base_price_inr).toLocaleString('en-IN')}</div>
@@ -714,6 +731,66 @@ const OptiiApp = {
 
   closeAppointmentModal() {
     const modal = document.getElementById('appointment-modal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  openCareModal(topic = 'faq') {
+    const contentMap = {
+      returns: {
+        title: '30-Day Home Trial & Return Guarantee',
+        body: 'Try your handcrafted optical frames at home. Unworn frames and prescription eyewear can be returned or exchanged within 30 days of delivery at our clinic or via insured courier pickup.'
+      },
+      shipping: {
+        title: 'Complimentary Insured Express Courier',
+        body: 'Every optical order ships free across India via tracked insured courier. Frame-only orders dispatch within 24 hours; custom prescription glazing takes 3–5 business days.'
+      },
+      warranty: {
+        title: '1-Year Lens Coating & Frame Warranty',
+        body: 'All multi-coated prescription lenses include a 12-month warranty against coating delamination and manufacturing defects, plus complimentary ultrasonic cleanings and nose-pad adjustments in-store.'
+      },
+      care: {
+        title: 'Lens Care & Acetate Maintenance',
+        body: 'Rinse frames with lukewarm water and use the included microfiber cloth. Avoid hot dashboards, alcohol wipes, or household detergents on anti-reflective coatings.'
+      },
+      faq: {
+        title: 'Frequently Asked Optical Questions',
+        body: 'Upload an existing prescription, enter SPH/CYL/Axis/PD manually, or book a 30-minute computerised refraction test at our clinic. Our optometrist reviews every order before lab glazing.'
+      }
+    };
+    const info = contentMap[topic] || contentMap.faq;
+    let modal = document.getElementById('care-policy-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'care-policy-modal';
+      modal.className = 'modal-backdrop-base';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'care-policy-title');
+      modal.innerHTML = `
+        <div class="modal-box-card" style="max-width: 520px;">
+          <div class="drawer-header">
+            <span class="drawer-title" id="care-policy-title">Customer Care</span>
+            <button class="drawer-close-btn" onclick="OptiiApp.closeCareModal()" aria-label="Close Customer Care">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div style="padding: 1.5rem; font-size: 14px; line-height: 1.6; color: var(--color-ink-secondary);" id="care-policy-body"></div>
+        </div>
+      `;
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeCareModal();
+      });
+      document.body.appendChild(modal);
+    }
+    const titleEl = document.getElementById('care-policy-title');
+    const bodyEl = document.getElementById('care-policy-body');
+    if (titleEl) titleEl.textContent = info.title;
+    if (bodyEl) bodyEl.textContent = info.body;
+    modal.classList.add('active');
+  },
+
+  closeCareModal() {
+    const modal = document.getElementById('care-policy-modal');
     if (modal) modal.classList.remove('active');
   },
 

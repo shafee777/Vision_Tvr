@@ -40,8 +40,8 @@ function createRateLimiter(options) {
   } = options;
 
   return function rateLimiterMiddleware(req, res, next) {
-    // In test environment or when explicit bypass header is provided by authorized test harness
-    if (req.headers['x-bypass-rate-limit'] === 'true') {
+    // Allow bypass header strictly in automated test environments
+    if (config.IS_TEST && req.headers['x-bypass-rate-limit'] === 'true') {
       return next();
     }
 

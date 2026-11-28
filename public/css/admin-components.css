@@ -570,7 +570,7 @@
   position: absolute;
   top: 6px;
   left: 6px;
-  background: var(--brand-ink, #111827);
+  background: var(--ink-primary);
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
@@ -634,7 +634,7 @@
 .store-logo-preview {
   width: 160px;
   height: 72px;
-  border: 1px dashed var(--border-medium, #d1d5db);
+  border: 1px dashed var(--border-light);
   border-radius: var(--radius-sm);
   background: var(--bg-subtle);
   display: flex;
